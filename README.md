@@ -1,6 +1,6 @@
-This package is based on python mainly create deformed structure and calculate second-order elastic constants from strain-energy relationship. This tool is only compatible with DFT package VASP.
+This package is based on python to create deformed structure and calculate second-order elastic constants from strain-energy relationship. This tool is only compatible with DFT package VASP.
 
-Kindly **cite** following article if you find package useful. 
+Kindly **cite** following article if you find this package useful. 
 
 1. *Kumar P, Adlakha I. Effect of interstitial hydrogen on elastic behavior of metals: an ab-initio study,Journal of Engineering Materials and Technology*  
 
@@ -21,7 +21,7 @@ The above code for cubic elastic constants is to create three folder **C11_C12_I
 
 Inside each strain folder, New POSCAR file is available which is basically deformed structure of POSCAR. Once preprocessing is done. You need to copy KPOINTS, POTCAR, INCAR to all strain folder inside all three folder. You can use same bash script copy.sh to ease this process.
 
-Once calculation of each folder is done
+Once calculation of each folder is done, you can go to post processing
 
 **Post Processing**\
 you can run post processing command to print elastic constants
@@ -35,7 +35,7 @@ C=constants.cubic_post()
 Few thing need to keep in mind
 1. Use direct coordinate in initial POSCAR
 2. Use ISIF=2 only for calculation
-3. You should know the symmetry of crystal and based on symmetry you can use different example folder. For finding symmetry of crystal used spglib or vaspkit
+3. You should know the symmetry of crystal and based on symmetry before preprocessing , for test suite use different example folder. For finding symmetry of crystal use spglib or vaspkit
 
 | Crystal system       | Space-group          |No. of independent elastic constants  |
 | ------------- |:-------------:| -----:|
@@ -51,7 +51,7 @@ Few thing need to keep in mind
 
 
 I will suggest you to find orthorhombic elastic constants if you are dealing with tetragonal system. This will reduce confusion which side is longer and which elastic constants to calculate. Just directly calculate all 9
-Similar for trigonal calculate all 7. 
+Similar for trigonal calculate all 7 elastic constants. 
 Triclinic and Monolclinic is not added yet in this package. In case Future requirement occurs, we will add to this package
 
 **Contact**\
