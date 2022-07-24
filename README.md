@@ -1,4 +1,4 @@
-This package is based on python to create deformed structure and calculate second-order elastic constants from strain-energy relationship. This tool is only compatible with DFT package VASP.
+This package is based on python to create deformed structure and calculate **second-order elastic constants** from strain-energy relationship. This tool is only compatible with DFT package VASP.
 
 Kindly **cite** following article if you find this package useful. 
 
@@ -54,7 +54,7 @@ I will suggest you to find orthorhombic elastic constants if you are dealing wit
 Similar for trigonal calculate all 7 elastic constants. 
 Triclinic and Monolclinic is not added yet in this package. In case Future requirement occurs, we will add to this package
 
-**Contact**\
+**For any contact, visit my homepage**\
 https://sites.google.com/view/prnvkmr4
 
 
