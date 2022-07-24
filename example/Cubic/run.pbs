@@ -1,0 +1,18 @@
+#PBS -l walltime=240:00:00
+#PBS -l nodes=1:ppn=48
+#PBS -m abe
+#PBS -j oe
+#PBS -o log.report
+cd $PBS_O_WORKDIR
+#======load module==========
+module load intel2018 gcc-9.1.0 # loading intel and gcc module necessary
+#=======vasp.5.4.4===========
+#mpiexec.hydra -np 24 /apps/VASP/vasp.5.4.4/original/intel/bin/vasp_std
+#=======vasp.6.1.0===========
+mpiexec.hydra -np 24 /apps/VASP/vasp.6.1.0/bin/vasp_std
+#============================
+# for loading phobos queue change to #PBS -q phobos 
+# select specific node by #PBS -l nodes=titan-05:ppn=24
+# Titan have 10 node divided into two queue
+# phobos (titan-01..titan-04) = 24 proc/node =24x4=96 max
+# deimos (titan-05..titan-10)=  48 proc/node =48x6= 288 max

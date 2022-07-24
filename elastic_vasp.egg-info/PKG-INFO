@@ -1,0 +1,18 @@
+Metadata-Version: 2.1
+Name: elastic-vasp
+Version: 0.0.1
+Summary: A example Python package
+Home-page: https://github.com/prnvrvs/elastic_vasp
+Author: PRANAV KUMAR
+Author-email: prnvkmr4@gmail.com
+License: MIT Licence
+Classifier: Development Status :: 1 - Planning
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+License-File: LICENSE

@@ -1,0 +1,12 @@
+copy POTCAR from your vasp-package to start this example (example doesnot contain POTCAR)
+make sure INCAR POTCAR POSCAR KPOINTS exist 
+Edit your test.py and strain.dat if require
+uncomment eg.cubic_pre() 
+run python3 test.py
+This will generate C11_C12_I C11_C12_II C44 folder
+Each folder contain different strain folder
+copy INCAR KPOINTS POTCAR and run.pbs into each strain folder inside each all 3 folder
+you can use copy.sh for copying and running vasp also 
+Once each folder calculation complete
+edit test.py and uncomment post-processing constants.cubic_post() (don't forget to comment pre-processing one)
+you are done
