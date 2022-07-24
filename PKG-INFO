@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: elastic_vasp
 Version: 0.0.1
-Summary: A example Python package
+Summary: Python package to assist vasp to find elastic cosnstants
 Home-page: https://github.com/prnvrvs/elastic_vasp
 Author: PRANAV KUMAR
 Author-email: prnvkmr4@gmail.com
