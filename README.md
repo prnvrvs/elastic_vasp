@@ -1,6 +1,6 @@
 This package is based on python to create deformed structure and calculate **second-order elastic constants** from strain-energy relationship. This tool is only compatible with DFT package VASP.
 
-Kindly **cite** following article if you find this package useful. 
+Kindly **cite** following articles if you find this package useful. 
 
 1. *Kumar P, Adlakha I. Effect of interstitial hydrogen on elastic behavior of metals: an ab-initio study, Journal of Engineering Materials and Technology.*  
 
