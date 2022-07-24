@@ -6,8 +6,10 @@ Kindly **cite** following articles if you find this package useful.
 
 2. *Mishra P, Kumar P, Neelakantan L, Adlakha I . First-principles prediction of electrochemical polarization and mechanical behavior in Mg based intermetallics, computational material science.*
 
-
-
+**Installation**
+```
+pip install elastic-vasp
+```
 
 How to use this Package
 
