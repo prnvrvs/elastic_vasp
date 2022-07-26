@@ -2,7 +2,7 @@ This package is based on python to create deformed structure and calculate **sec
 
 Kindly **cite** following articles if you find this package useful. 
 
-1. *Kumar P, Adlakha I. Effect of interstitial hydrogen on elastic behavior of metals: an ab-initio study, Journal of Engineering Materials and Technology.*  
+1. *Kumar, P., and Adlakha, I. (July 26, 2022). "Effect of Interstitial Hydrogen on Elastic Behavior of Metals: an Ab-Initio Study." ASME. J. Eng. Mater. Technol. doi: https://doi.org/10.1115/1.4055097*  
 
 2. *Mishra P, Kumar P, Neelakantan L, Adlakha I . First-principles prediction of electrochemical polarization and mechanical behavior in Mg based intermetallics, computational material science.*
 
