@@ -2,9 +2,33 @@ This package is based on python to create deformed structure and calculate **sec
 
 Kindly **cite** following articles if you find this package useful. 
 
-1. *Kumar, P., and Adlakha, I. (July 26, 2022). "Effect of Interstitial Hydrogen on Elastic Behavior of Metals: an Ab-Initio Study." ASME. J. Eng. Mater. Technol. doi: https://doi.org/10.1115/1.4055097*  
+1. *Kumar, P., and Adlakha, I. (July 26, 2022). "Effect of Interstitial Hydrogen on Elastic Behavior of Metals: an Ab-Initio Study." ASME. J. Eng. Mater. Technol. doi: https://doi.org/10.1115/1.4055097* 
+```
+@article{Elastic_vasp,
+    author = {Kumar, P. and Adlakha, I.},
+    title = "{Effect of Interstitial Hydrogen on Elastic Behavior of Metals: An Ab-Initio Study}",
+    journal = {Journal of Engineering Materials and Technology},
+    volume = {145},
+    number = {1},
+    year = {2022},
+    month = {08},
+    issn = {0094-4289},
+    doi = {10.1115/1.4055097},
+}
+```
 2. *Mishra P, Kumar P, Neelakantan L, Adlakha I. First-principles prediction of electrochemical polarization and mechanical behavior in Mg based intermetallics. Computational Materials Science. 2022 Nov 1;214:111667. https://doi.org/10.1016/j.commatsci.2022.111667* 
-
+```
+@article{MISHRA2022111667,
+title = {First-principles prediction of electrochemical polarization and mechanical behavior in Mg based intermetallics},
+journal = {Computational Materials Science},
+volume = {214},
+pages = {111667},
+year = {2022},
+issn = {0927-0256},
+doi = {https://doi.org/10.1016/j.commatsci.2022.111667},
+author = {Pragyandipta Mishra and Pranav Kumar and Lakshman Neelakantan and Ilaksh Adlakha},
+}
+```
 
 
 **Installation**
