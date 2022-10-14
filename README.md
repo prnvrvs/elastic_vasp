@@ -44,7 +44,7 @@ from elastic_vasp import elastic_gen as eg
 from elastic_vasp import constants 
 eg.cubic_pre() 
 ```
-The above code for cubic elastic constants is to create three folder **C11_C12_I**, **C11_C12_II**, **C44** each contain bunch of folder corresponding to strain range. You need to set strain level in file strain.dat
+The above code for cubic elastic constants is to create three folder **C11_C12_I**, **C11_C12_II**, **C44** each contain bunch of folder corresponding to strain range. You need to set strain level in file "strain.dat". (Note: zero strain should be metioned as 0.00 to avoid-post processing error)
 
 Inside each strain folder, New POSCAR file is available which is basically deformed structure of POSCAR. Once preprocessing is done. You need to copy KPOINTS, POTCAR, INCAR to all strain folder inside all three folder. You can use same bash script copy.sh to ease this process.
 
