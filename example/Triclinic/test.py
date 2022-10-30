@@ -10,7 +10,7 @@ eg.triclinic_pre()   # uncoment during preprocessing and comment during post pro
 #for copy as well as run you can use copy.sh file edit and run as "bash -i copy.sh"
 
 #======= post-processing =======
-#C=constants.orthogonal_post() # uncoment during postprocessing and comment during pre-processing
+#C=constants.triclinic_post() # uncoment during postprocessing and comment during pre-processing
 
 #===OUTPUT is printed===
 
