@@ -79,10 +79,7 @@ Few thing need to keep in mind
 
 I will suggest you to find orthorhombic elastic constants if you are dealing with tetragonal system. This will reduce confusion which side is longer and which elastic constants to calculate. Just directly calculate all 9 elastic constants.\
 Similarly, for trigonal calculate all 7 elastic constants. 
-Triclinic and Monolclinic is not added yet in this package. In case Future requirement occurs, we will add to this package
+For Monolclinic system, use Triclinic to avoid confusion
 
 **For any contact, visit my homepage**\
 https://sites.google.com/view/prnvkmr4
-
-
- 
