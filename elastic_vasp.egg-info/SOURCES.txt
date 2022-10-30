@@ -37,6 +37,14 @@ example/Orthogonal/copy.sh
 example/Orthogonal/run.pbs
 example/Orthogonal/strain.dat
 example/Orthogonal/test.py
+example/Triclinic/INCAR
+example/Triclinic/KPOINTS
+example/Triclinic/POSCAR
+example/Triclinic/README
+example/Triclinic/copy.sh
+example/Triclinic/run.pbs
+example/Triclinic/strain.dat
+example/Triclinic/test.py
 example/Trigonal/INCAR
 example/Trigonal/KPOINTS
 example/Trigonal/POSCAR
