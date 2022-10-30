@@ -79,7 +79,7 @@ Few thing need to keep in mind
 
 I will suggest you to find orthorhombic elastic constants if you are dealing with tetragonal system. This will reduce confusion which side is longer and which elastic constants to calculate. Just directly calculate all 9 elastic constants.\
 Similarly, for trigonal calculate all 7 elastic constants. 
-For Monolclinic system, use Triclinic to avoid confusion
+
 
 **For any contact, visit my homepage**\
 https://sites.google.com/view/prnvkmr4
