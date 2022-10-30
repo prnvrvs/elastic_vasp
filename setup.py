@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='elastic_vasp',
-    version='0.0.1',    
+    version='0.0.4',    
     description='A example Python package',
     url='https://github.com/prnvrvs/elastic_vasp',
     author='PRANAV KUMAR',
