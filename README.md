@@ -48,7 +48,7 @@ The above code for cubic elastic constants is to create three folder **C11_C12_I
 
 Inside each strain folder, New POSCAR file is available which is basically deformed structure of POSCAR. Once preprocessing is done. You need to copy KPOINTS, POTCAR, INCAR to all strain folder inside all three folder. You can use same bash script copy.sh to ease this process.
 
-Once calculation of each folder is done, you can go to post processing
+Once calculation of each folder is done, you can go for post processing
 
 **Post Processing**\
 you can run post processing command to print elastic constants
@@ -62,7 +62,7 @@ C=constants.cubic_post()
 Few thing need to keep in mind
 1. Use direct coordinate in initial POSCAR
 2. Use ISIF=2 only for calculation
-3. You should know the symmetry of crystal and based on symmetry before preprocessing , for test suite use different example folder. For finding symmetry of crystal use phonopy or vaspkit
+3. You should know the symmetry of crystal and based on symmetry before preprocessing , for test suite use different example folder. For finding symmetry of crystal use spglib phonopy or vaspkit
 
 | Crystal system       | Space-group          |No. of independent elastic constants  |
 | ------------- |:-------------:| -----:|
