@@ -62,7 +62,7 @@ C=constants.cubic_post()
 Few thing need to keep in mind
 1. Use direct coordinate in initial POSCAR
 2. Use ISIF=2 only for calculation
-3. You should know the symmetry of crystal and based on symmetry before preprocessing , for test suite use different example folder. For finding symmetry of crystal use spglib phonopy or vaspkit
+3. You should know the symmetry of crystal and based on symmetry before preprocessing , for test suite use different example folder. For finding symmetry of crystal use spglib/phonopy or vaspkit
 
 | Crystal system       | Space-group          |No. of independent elastic constants  |
 | ------------- |:-------------:| -----:|
