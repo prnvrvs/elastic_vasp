@@ -8,5 +8,5 @@ Each folder contain different strain folder
 copy INCAR KPOINTS POTCAR and run.pbs into each strain folder inside each all 3 folder
 you can use copy.sh for copying and running vasp also 
 Once each folder calculation complete
-edit test.py and uncomment post-processing constants.trigonal_1_post() (don't forget to comment pre-processing one)
+edit test.py and uncomment post-processing constants.triclinic_post() (don't forget to comment pre-processing one)
 you are done
