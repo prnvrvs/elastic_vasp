@@ -59,6 +59,17 @@ from elastic_vasp import constants
 #======= post-processing =======
 C=constants.cubic_post() 
 ```
+Following option are available:
+```
+cubic_pre()
+orthogonal_pre() ------ for orthorhombic and Tetragonal
+hexagonal_pre() 
+trigonal_1_pre()
+trigonal_2_pre()
+monoclinic_pre()
+triclinic_pre()
+```
+
 Few thing need to keep in mind
 1. Use direct coordinate in initial POSCAR
 2. Use ISIF=2 only for calculation
