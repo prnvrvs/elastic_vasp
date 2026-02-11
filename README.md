@@ -15,20 +15,7 @@ Kindly **cite** following articles if you find this package useful.
     issn = {0094-4289},
     doi = {10.1115/1.4055097},
 }
-```
-2. *Mishra P, Kumar P, Neelakantan L, Adlakha I. First-principles prediction of electrochemical polarization and mechanical behavior in Mg based intermetallics. Computational Materials Science. 2022 Nov 1;214:111667. https://doi.org/10.1016/j.commatsci.2022.111667* 
-```
-@article{MISHRA2022111667,
-title = {First-principles prediction of electrochemical polarization and mechanical behavior in Mg based intermetallics},
-journal = {Computational Materials Science},
-volume = {214},
-pages = {111667},
-year = {2022},
-issn = {0927-0256},
-doi = {https://doi.org/10.1016/j.commatsci.2022.111667},
-author = {Pragyandipta Mishra and Pranav Kumar and Lakshman Neelakantan and Ilaksh Adlakha},
-}
-```
+
 
 
 **Installation**
