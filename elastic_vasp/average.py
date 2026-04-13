@@ -12,7 +12,14 @@ def avg(C):
     C23=C[1,2]
     K_voigt=((C11+C22+C33)+2*(C12+C13+C23))/9
     G_voigt=((C11+C22+C33)-(C12+C13+C23)+3*(C44+C55+C66))/15
-    S=np.linalg.inv(C)
+    try:
+        S=np.linalg.inv(C)
+    except np.linalg.LinAlgError:
+        print("===== Polycrystalline Average =====")
+        print("Matrix is singular; skipping Reuss/Hill averages")
+        print("K_voigt=",'%.2f' %K_voigt,' GPa')
+        print("G_voigt=",'%.2f' %G_voigt,' GPa')
+        return
     S11=S[0,0]
     S22=S[1,1]
     S33=S[2,2]
@@ -23,8 +30,16 @@ def avg(C):
     S13=S[0,2]
     S23=S[1,2]
 
-    K_reuss=1/((S11+S22+S33)+2*(S12+S13+S23))
-    G_reuss=15/(4*(S11+S22+S33)-4*(S12+S13+S23)+3*(S44+S55+S66))
+    k_denom=(S11+S22+S33)+2*(S12+S13+S23)
+    g_denom=4*(S11+S22+S33)-4*(S12+S13+S23)+3*(S44+S55+S66)
+    if abs(k_denom) < 1e-15 or abs(g_denom) < 1e-15:
+        print("===== Polycrystalline Average =====")
+        print("Reuss averages are undefined for this matrix; skipping Hill averages")
+        print("K_voigt=",'%.2f' %K_voigt,' GPa')
+        print("G_voigt=",'%.2f' %G_voigt,' GPa')
+        return
+    K_reuss=1/k_denom
+    G_reuss=15/g_denom
     K_VRH=(K_voigt+K_reuss)/2
     G_VRH=(G_voigt+G_reuss)/2
     E_VRH=(9*K_VRH*G_VRH)/(G_VRH+3*K_VRH)

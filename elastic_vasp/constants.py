@@ -9,15 +9,18 @@ import numpy as np
 from elastic_vasp.coefficient import coeff
 from elastic_vasp import art
 from elastic_vasp import average
+
+
+def _coeff_from(base_dir, folder):
+    return coeff(os.path.join(base_dir, folder))
+
+
 def cubic_post():
     art.loading() 
-    cwd=os.getcwd()
-    os.chdir(cwd+"/"+"C11_C12_I/")
-    c11_c12_I=coeff()
-    os.chdir(cwd+"/"+"C11_C12_II/")
-    c11_c12_II=coeff()
-    os.chdir(cwd+"/"+"C44/")
-    c44=coeff()
+    base_dir=os.getcwd()
+    c11_c12_I=_coeff_from(base_dir, "C11_C12_I")
+    c11_c12_II=_coeff_from(base_dir, "C11_C12_II")
+    c44=_coeff_from(base_dir, "C44")
     bulk=c11_c12_II*2/9
     shear=c11_c12_I*0.5
     C11=(3*bulk+4*shear)/3
@@ -57,17 +60,12 @@ def cubic_post():
     return stiffness
 def hexagonal_post():
     art.loading() 
-    cwd=os.getcwd()
-    os.chdir(cwd+"/"+"C11_C12_I/")
-    c11_c12_I=coeff()
-    os.chdir(cwd+"/"+"C11_C12_II/")
-    c11_c12_II=coeff()
-    os.chdir(cwd+"/"+"C11_C33_C13_I/")
-    c11_c33_c13_I=coeff()
-    os.chdir(cwd+"/"+"C44/")
-    c44=coeff()
-    os.chdir(cwd+"/"+"C11_C12_C13_C33/")
-    c11_c12_c13_c33=coeff()
+    base_dir=os.getcwd()
+    c11_c12_I=_coeff_from(base_dir, "C11_C12_I")
+    c11_c12_II=_coeff_from(base_dir, "C11_C12_II")
+    c11_c33_c13_I=_coeff_from(base_dir, "C11_C33_C13_I")
+    c44=_coeff_from(base_dir, "C44")
+    c11_c12_c13_c33=_coeff_from(base_dir, "C11_C12_C13_C33")
     C11=(c11_c12_I+c11_c12_II)/2
     C12=(c11_c12_I-c11_c12_II)/2
     C44=c44
@@ -116,25 +114,16 @@ def hexagonal_post():
     return stiffness
 def orthogonal_post():
     art.loading()
-    cwd=os.getcwd()
-    os.chdir(cwd+"/"+"C11_C22_C12_I/")
-    c11_c22_c12_I=coeff()
-    os.chdir(cwd+"/"+"C11_C22_C12_II/")
-    c11_c22_c12_II=coeff()
-    os.chdir(cwd+"/"+"C22_C33_C23_I/")
-    c22_c33_c23_I=coeff()
-    os.chdir(cwd+"/"+"C22_C33_C23_II/")
-    c22_c33_c23_II=coeff()
-    os.chdir(cwd+"/"+"C11_C33_C13_I/")
-    c11_c33_c13_I=coeff()
-    os.chdir(cwd+"/"+"C11_C33_C13_II/")
-    c11_c33_c13_II=coeff()
-    os.chdir(cwd+"/"+"C44/")
-    c44=coeff()
-    os.chdir(cwd+"/"+"C55/")
-    c55=coeff()
-    os.chdir(cwd+"/"+"C66/")
-    c66=coeff()
+    base_dir=os.getcwd()
+    c11_c22_c12_I=_coeff_from(base_dir, "C11_C22_C12_I")
+    c11_c22_c12_II=_coeff_from(base_dir, "C11_C22_C12_II")
+    c22_c33_c23_I=_coeff_from(base_dir, "C22_C33_C23_I")
+    c22_c33_c23_II=_coeff_from(base_dir, "C22_C33_C23_II")
+    c11_c33_c13_I=_coeff_from(base_dir, "C11_C33_C13_I")
+    c11_c33_c13_II=_coeff_from(base_dir, "C11_C33_C13_II")
+    c44=_coeff_from(base_dir, "C44")
+    c55=_coeff_from(base_dir, "C55")
+    c66=_coeff_from(base_dir, "C66")
     A=c11_c22_c12_I
     B=c11_c22_c12_II
     C=c22_c33_c23_I
@@ -218,7 +207,7 @@ def orthogonal_post():
             ''')
     #checking stability
 
-    if (np.all(np.linalg.eigvals(stiffness)) > 0):
+    if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
         print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
@@ -227,19 +216,13 @@ def orthogonal_post():
     return stiffness
 def trigonal_1_post():
     art.loading()
-    cwd=os.getcwd()
-    os.chdir(cwd+"/"+"C11_C12_I/")
-    c11_c12_I=coeff()
-    os.chdir(cwd+"/"+"C11_C12_II/")
-    c11_c12_II=coeff() 
-    os.chdir(cwd+"/"+"C11_C33_C13_I/")
-    c11_c33_c13_I=coeff()  
-    os.chdir(cwd+"/"+"C11_C33_C13_II/")
-    c11_c33_c13_II=coeff()
-    os.chdir(cwd+"/"+"C11_C44_C14_I/")
-    c11_c44_c14_I=coeff() 
-    os.chdir(cwd+"/"+"C11_C44_C14_II/")
-    c11_c44_c14_II=coeff()  
+    base_dir=os.getcwd()
+    c11_c12_I=_coeff_from(base_dir, "C11_C12_I")
+    c11_c12_II=_coeff_from(base_dir, "C11_C12_II")
+    c11_c33_c13_I=_coeff_from(base_dir, "C11_C33_C13_I")
+    c11_c33_c13_II=_coeff_from(base_dir, "C11_C33_C13_II")
+    c11_c44_c14_I=_coeff_from(base_dir, "C11_C44_C14_I")
+    c11_c44_c14_II=_coeff_from(base_dir, "C11_C44_C14_II")
     A=c11_c12_I
     B=c11_c12_II
     C=c11_c33_c13_I
@@ -287,7 +270,7 @@ def trigonal_1_post():
             ''')
     #checking stability
 
-    if (np.all(np.linalg.eigvals(stiffness)) > 0):
+    if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
         print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
@@ -299,21 +282,14 @@ def trigonal_1_post():
 
 def trigonal_2_post():
     art.loading()
-    cwd=os.getcwd()
-    os.chdir(cwd+"/"+"C11_C12_I/")
-    c11_c12_I=coeff()
-    os.chdir(cwd+"/"+"C11_C12_II/")
-    c11_c12_II=coeff() 
-    os.chdir(cwd+"/"+"C11_C33_C13_I/")
-    c11_c33_c13_I=coeff()  
-    os.chdir(cwd+"/"+"C11_C33_C13_II/")
-    c11_c33_c13_II=coeff()
-    os.chdir(cwd+"/"+"C11_C44_C14_I/")
-    c11_c44_c14_I=coeff() 
-    os.chdir(cwd+"/"+"C11_C44_C14_II/")
-    c11_c44_c14_II=coeff()  
-    os.chdir(cwd+"/"+"C11_C44_C15/")
-    c11_c44_c15=coeff() 
+    base_dir=os.getcwd()
+    c11_c12_I=_coeff_from(base_dir, "C11_C12_I")
+    c11_c12_II=_coeff_from(base_dir, "C11_C12_II")
+    c11_c33_c13_I=_coeff_from(base_dir, "C11_C33_C13_I")
+    c11_c33_c13_II=_coeff_from(base_dir, "C11_C33_C13_II")
+    c11_c44_c14_I=_coeff_from(base_dir, "C11_C44_C14_I")
+    c11_c44_c14_II=_coeff_from(base_dir, "C11_C44_C14_II")
+    c11_c44_c15=_coeff_from(base_dir, "C11_C44_C15")
     A=c11_c12_I
     B=c11_c12_II
     C=c11_c33_c13_I
@@ -344,7 +320,7 @@ def trigonal_2_post():
             ''')
     #checking stability
 
-    if (np.all(np.linalg.eigvals(stiffness)) > 0):
+    if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
         print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
@@ -356,33 +332,20 @@ def trigonal_2_post():
 
 def monoclinic_post():
     art.loading()
-    cwd=os.getcwd()
-    os.chdir(cwd+"/"+"C11_C22_C12_I/")
-    c11_c22_c12_I=coeff()
-    os.chdir(cwd+"/"+"C11_C22_C12_II/")
-    c11_c22_c12_II=coeff()
-    os.chdir(cwd+"/"+"C22_C33_C23_I/")
-    c22_c33_c23_I=coeff()
-    os.chdir(cwd+"/"+"C22_C33_C23_II/")
-    c22_c33_c23_II=coeff()
-    os.chdir(cwd+"/"+"C11_C33_C13_I/")
-    c11_c33_c13_I=coeff()
-    os.chdir(cwd+"/"+"C11_C33_C13_II/")
-    c11_c33_c13_II=coeff()
-    os.chdir(cwd+"/"+"C44/")
-    c44=coeff()
-    os.chdir(cwd+"/"+"C11_C55_C15_I/")
-    c11_c55_c15_I=coeff()
-    os.chdir(cwd+"/"+"C11_C55_C15_II/")
-    c11_c55_c15_II=coeff()
-    os.chdir(cwd+"/"+"C22_C55_C25/")
-    c22_c55_c25=coeff()
-    os.chdir(cwd+"/"+"C33_C55_C35/")
-    c33_c55_c35=coeff()
-    os.chdir(cwd+"/"+"C44_C66_C46_I/")
-    c44_c66_c46_I=coeff()
-    os.chdir(cwd+"/"+"C44_C66_C46_II/")
-    c44_c66_c46_II=coeff()
+    base_dir=os.getcwd()
+    c11_c22_c12_I=_coeff_from(base_dir, "C11_C22_C12_I")
+    c11_c22_c12_II=_coeff_from(base_dir, "C11_C22_C12_II")
+    c22_c33_c23_I=_coeff_from(base_dir, "C22_C33_C23_I")
+    c22_c33_c23_II=_coeff_from(base_dir, "C22_C33_C23_II")
+    c11_c33_c13_I=_coeff_from(base_dir, "C11_C33_C13_I")
+    c11_c33_c13_II=_coeff_from(base_dir, "C11_C33_C13_II")
+    c44=_coeff_from(base_dir, "C44")
+    c11_c55_c15_I=_coeff_from(base_dir, "C11_C55_C15_I")
+    c11_c55_c15_II=_coeff_from(base_dir, "C11_C55_C15_II")
+    c22_c55_c25=_coeff_from(base_dir, "C22_C55_C25")
+    c33_c55_c35=_coeff_from(base_dir, "C33_C55_C35")
+    c44_c66_c46_I=_coeff_from(base_dir, "C44_C66_C46_I")
+    c44_c66_c46_II=_coeff_from(base_dir, "C44_C66_C46_II")
     
     A=c11_c22_c12_I
     B=c11_c22_c12_II
@@ -428,7 +391,7 @@ def monoclinic_post():
 
     print('''
             ==== stiffness matrix ====''')
-    stiffness=np.array([[C11,C12,C13,0,C15,0],[C12,C22,C23,0,C25,0],[C13,C23,C33,0,C35,0],[0,0,0,C44,0,C46],[C15,C25,C25,C35,C55,0],[0,0,0,0,C46,C66]])
+    stiffness=np.array([[C11,C12,C13,0,C15,0],[C12,C22,C23,0,C25,0],[C13,C23,C33,0,C35,0],[0,0,0,C44,0,C46],[C15,C25,C35,0,C55,0],[0,0,0,C46,0,C66]])
 
     print(np.around(stiffness,decimals=2))
 
@@ -439,7 +402,7 @@ def monoclinic_post():
             ''')
     #checking stability
 
-    if (np.all(np.linalg.eigvals(stiffness)) > 0):
+    if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
         print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
@@ -450,49 +413,28 @@ def monoclinic_post():
 
 def triclinic_post():
     art.loading()
-    cwd=os.getcwd()
-    os.chdir(cwd+"/"+"C11/")
-    c11=coeff()
-    os.chdir(cwd+"/"+"C11_C22_C12/")
-    c11_c22_c12=coeff()
-    os.chdir(cwd+"/"+"C22/")
-    c22=coeff()
-    os.chdir(cwd+"/"+"C22_C33_C23/")
-    c22_c33_c23=coeff()
-    os.chdir(cwd+"/"+"C33/")
-    c33=coeff()
-    os.chdir(cwd+"/"+"C11_C33_C13/")
-    c11_c33_c13=coeff()
-    os.chdir(cwd+"/"+"C44")
-    c44=coeff()
-    os.chdir(cwd+"/"+"C11_C44_C14/")
-    c11_c44_c14=coeff()
-    os.chdir(cwd+"/"+"C55/")
-    c55=coeff()
-    os.chdir(cwd+"/"+"C11_C55_C15/")
-    c11_c55_c15=coeff()
-    os.chdir(cwd+"/"+"C66")
-    c66=coeff()
-    os.chdir(cwd+"/"+"C11_C66_C16")
-    c11_c66_c16=coeff()
-    os.chdir(cwd+"/"+"C22_C44_C24/")
-    c22_c44_c24=coeff()
-    os.chdir(cwd+"/"+"C22_C55_C25/")
-    c22_c55_c25=coeff()
-    os.chdir(cwd+"/"+"C22_C66_C26/")
-    c22_c66_c26=coeff()
-    os.chdir(cwd+"/"+"C33_C44_C34/")
-    c33_c44_c34=coeff()
-    os.chdir(cwd+"/"+"C33_C55_C35/")
-    c33_c55_c35=coeff()
-    os.chdir(cwd+"/"+"C33_C66_C36/")
-    c33_c66_c36=coeff()
-    os.chdir(cwd+"/"+"C44_C55_C45/")
-    c44_c55_c45=coeff()
-    os.chdir(cwd+"/"+"C44_C66_C46/")
-    c44_c66_c46=coeff()
-    os.chdir(cwd+"/"+"C55_C66_C56/")
-    c55_c66_c56=coeff()
+    base_dir=os.getcwd()
+    c11= _coeff_from(base_dir, "C11")
+    c11_c22_c12=_coeff_from(base_dir, "C11_C22_C12")
+    c22=_coeff_from(base_dir, "C22")
+    c22_c33_c23=_coeff_from(base_dir, "C22_C33_C23")
+    c33=_coeff_from(base_dir, "C33")
+    c11_c33_c13=_coeff_from(base_dir, "C11_C33_C13")
+    c44=_coeff_from(base_dir, "C44")
+    c11_c44_c14=_coeff_from(base_dir, "C11_C44_C14")
+    c55=_coeff_from(base_dir, "C55")
+    c11_c55_c15=_coeff_from(base_dir, "C11_C55_C15")
+    c66=_coeff_from(base_dir, "C66")
+    c11_c66_c16=_coeff_from(base_dir, "C11_C66_C16")
+    c22_c44_c24=_coeff_from(base_dir, "C22_C44_C24")
+    c22_c55_c25=_coeff_from(base_dir, "C22_C55_C25")
+    c22_c66_c26=_coeff_from(base_dir, "C22_C66_C26")
+    c33_c44_c34=_coeff_from(base_dir, "C33_C44_C34")
+    c33_c55_c35=_coeff_from(base_dir, "C33_C55_C35")
+    c33_c66_c36=_coeff_from(base_dir, "C33_C66_C36")
+    c44_c55_c45=_coeff_from(base_dir, "C44_C55_C45")
+    c44_c66_c46=_coeff_from(base_dir, "C44_C66_C46")
+    c55_c66_c56=_coeff_from(base_dir, "C55_C66_C56")
     
     A=c11
     B=c22    
@@ -568,7 +510,7 @@ def triclinic_post():
 
     print('''
             ==== stiffness matrix ====''')
-    stiffness=np.array([[C11,C12,C13,C14,C15,C16],[C12,C22,C23,C24,C25,C26],[C13,C23,C33,C34,C35,C36],[C14,C24,C34,C44,C45,C46],[C15,C25,C25,C35,C55,C56],[C16,C26,C36,C46,C56,C66]])
+    stiffness=np.array([[C11,C12,C13,C14,C15,C16],[C12,C22,C23,C24,C25,C26],[C13,C23,C33,C34,C35,C36],[C14,C24,C34,C44,C45,C46],[C15,C25,C35,C45,C55,C56],[C16,C26,C36,C46,C56,C66]])
 
     print(np.around(stiffness,decimals=2))
 
@@ -579,7 +521,7 @@ def triclinic_post():
             ''')
     #checking stability
 
-    if (np.all(np.linalg.eigvals(stiffness)) > 0):
+    if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
         print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
