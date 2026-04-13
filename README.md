@@ -27,26 +27,36 @@ How to use this Package
 
 **Preprocessing**
 ```
-from elastic_vasp import elastic_gen as eg 
-from elastic_vasp import constants 
-eg.cubic_pre() 
+from elastic_vasp import elastic_gen as eg
+
+eg.cubic_pre()
 ```
-The above code for cubic elastic constants is to create three folder **C11_C12_I**, **C11_C12_II**, **C44** each contain bunch of folder corresponding to strain range. You need to set strain level in file "strain.dat". (Note: zero strain should be metioned as 0.00 to avoid-post processing error)
+The above code for cubic elastic constants creates three folders: **C11_C12_I**, **C11_C12_II**, and **C44**. Each folder contains one subfolder per strain value from `strain.dat`. Zero strain is normalized automatically, so `0`, `0.0`, and `0.00` all work.
 
-Inside each strain folder, New POSCAR file is available which is basically deformed structure of POSCAR. Once preprocessing is done. You need to copy KPOINTS, POTCAR, INCAR to all strain folder inside all three folder. You can use same bash script copy.sh to ease this process.
+Inside each strain folder, a new `POSCAR` is created for the deformed structure. After preprocessing, copy `KPOINTS`, `POTCAR`, and `INCAR` into every strain folder. You can use the bundled `copy.sh` script to automate that step.
 
-Once calculation of each folder is done, you can go for post processing
+After the VASP calculations finish, run post-processing to print the elastic constants.
 
 **Post Processing**\
 you can run post processing command to print elastic constants
 
 ```
-from elastic_vasp import elastic_gen as eg  # This will import module
 from elastic_vasp import constants 
-#======= post-processing =======
-C=constants.cubic_post() 
+
+C = constants.cubic_post()
 ```
-Following option are available:
+Available post-processing functions:
+```
+cubic_post()
+hexagonal_post()
+orthogonal_post()
+trigonal_1_post()
+trigonal_2_post()
+monoclinic_post()
+triclinic_post()
+```
+
+Available preprocessing functions:
 ```
 cubic_pre()
 orthogonal_pre() ------ for orthorhombic and Tetragonal
@@ -57,10 +67,11 @@ monoclinic_pre()
 triclinic_pre()
 ```
 
-Few thing need to keep in mind
+Things to keep in mind:
 1. Use direct coordinate in initial POSCAR
 2. Use ISIF=2 only for calculation
-3. You should know the symmetry of crystal and based on symmetry before preprocessing , for test suite use different example folder. For finding symmetry of crystal use spglib/phonopy 
+3. You should know the symmetry of the crystal before preprocessing. Use the example folders for tests. To determine symmetry, use spglib or phonopy.
+4. Post-processing auto-detects the zero-strain folder from the `strain_*` names, so it no longer depends on `strain_0.00` specifically.
 
 | Crystal system       | Space-group          |No. of independent elastic constants  |
 | ------------- |:-------------:| -----:|
@@ -75,8 +86,9 @@ Few thing need to keep in mind
 |Cubic		     |195-230			|3 |
 
 
-I will suggest you to find orthorhombic elastic constants if you are dealing with tetragonal system. This will reduce confusion which side is longer and which elastic constants to calculate. Just directly calculate all 9 elastic constants.\
-Similarly, for trigonal calculate all 7 elastic constants. 
+For tetragonal systems, it is usually simpler to calculate orthorhombic elastic constants first. That avoids confusion about which axis is longer and lets you compute all 9 elastic constants directly.
+
+Similarly, for trigonal systems, calculate all 7 elastic constants.
 
 
 **For any contact, visit my homepage**\
