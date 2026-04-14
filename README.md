@@ -25,6 +25,8 @@ pip install elastic-vasp
 
 How to use this Package
 
+The repository now keeps the original code line on the `legacy` branch and the current refactored code on `main`.
+
 **Preprocessing**
 ```
 from elastic_vasp import elastic_gen as eg
