@@ -1,5 +1,5 @@
-K-Mesh Generated with KP-Resolved Value (Low=0.08~0.05, Medium=0.04~0.03, Fine=0.02~0.01): 0.020
+Gamma-centred mesh for the 10-atom rhombohedral corundum cell (a_rh = 5.13 A)
 0
-Monkhorst-Pack
-  21  21  21
+Gamma
+  8  8  8
 0.0  0.0  0.0

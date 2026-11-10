@@ -10,7 +10,8 @@ from elastic_vasp import constants
 #for copy as well as run you can use copy.sh file edit and run as "bash -i copy.sh"
 
 #======= post-processing =======
-#C=constants.orthogonal_post() # uncoment during postprocessing and comment during pre-processing
+#C=constants.trigonal_2_post() # uncoment during postprocessing and comment during pre-processing
+#C=constants.trigonal_1_post() # (pair it with trigonal_1_pre)
 
 #===OUTPUT is printed===
 

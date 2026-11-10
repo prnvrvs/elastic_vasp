@@ -1,7 +1,13 @@
+import contextlib
 import os
+from collections import namedtuple
+import re
+import warnings
 import numpy as np
 from glob import glob
 import matplotlib.pyplot as plt
+
+from elastic_vasp import poscar
 
 
 def _find_zero_strain_folder(base_dir="."):
@@ -15,126 +21,187 @@ def _find_zero_strain_folder(base_dir="."):
   return None
 
 
-def _read_last_oszicar_energy(oszicar_path):
-  last_energy = None
-  last_f_energy = None
-  with open(oszicar_path) as handle:
+# Energy used for the E(s) fit: "energy(sigma->0)" of the final ionic step in
+# OUTCAR (the energy extrapolated to zero smearing). OUTCAR is the only source;
+# if it is missing, has no such line, or the run did not finish, post-processing
+# stops and says where.
+_OUTCAR_SIGMA0 = re.compile(r"energy\(sigma->0\)\s*=\s*(\S+)")
+# VASP writes this footer only when a run terminates normally
+_OUTCAR_FINISHED = "General timing and accounting"
+
+
+class MissingEnergyError(RuntimeError):
+  """Raised when one or more strain folders have no usable OUTCAR energy."""
+
+
+# OUTCARs can be hundreds of MB, so during one post-processing run each file is
+# scanned once (energy, volume and finished flag together) and the result reused.
+_outcar_cache = None
+
+
+@contextlib.contextmanager
+def outcar_cache():
+  """Reuse OUTCAR scans inside this block (nesting is fine)."""
+  global _outcar_cache
+  outermost = _outcar_cache is None
+  if outermost:
+      _outcar_cache = {}
+  try:
+      yield
+  finally:
+      if outermost:
+          _outcar_cache = None
+
+
+OutcarInfo = namedtuple("OutcarInfo", "energy volume finished nsw ibrion relaxed")
+
+_OUTCAR_NSW = re.compile(r"\bNSW\s*=\s*(-?\d+)")
+_OUTCAR_IBRION = re.compile(r"\bIBRION\s*=\s*(-?\d+)")
+# printed when an ionic relaxation (IBRION = 1, 2, 3) meets EDIFFG
+_OUTCAR_RELAXED = "reached required accuracy"
+_RELAXATION_IBRION = (1, 2, 3)
+
+
+def _scan_outcar(outcar_path):
+  """Everything needed from OUTCAR, collected in one pass."""
+  key = os.path.abspath(outcar_path)
+  if _outcar_cache is not None and key in _outcar_cache:
+      return _outcar_cache[key]
+  energy = volume = nsw = ibrion = None
+  finished = relaxed = False
+  with open(outcar_path) as handle:
       for line in handle:
-          if "E0=" not in line and "F=" not in line:
-              continue
-          parts = line.split()
-          for idx, token in enumerate(parts):
-              if token.startswith("E0="):
-                  # VASP writes "E0= -.1E+02" (value in the next token);
-                  # also accept the glued form "E0=-.1E+02".
-                  value = token.split("=", 1)[1]
-                  if not value and idx + 1 < len(parts):
-                      value = parts[idx + 1]
+          if "energy(sigma->0)" in line:
+              match = _OUTCAR_SIGMA0.search(line)
+              if match:
                   try:
-                      last_energy = float(value)
+                      energy = float(match.group(1))
                   except ValueError:
-                      continue
-              elif token == "F=" and idx + 1 < len(parts):
-                  try:
-                      last_f_energy = float(parts[idx + 1])
-                  except ValueError:
-                      continue
-  if last_energy is not None:
-      return last_energy
-  if last_f_energy is not None:
-      return last_f_energy
-  raise ValueError("No free-energy line found in {}".format(oszicar_path))
+                      pass
+          elif "volume of cell" in line:
+              try:
+                  volume = float(line.split()[-1])
+              except (ValueError, IndexError):
+                  pass
+          elif _OUTCAR_FINISHED in line:
+              finished = True
+          elif _OUTCAR_RELAXED in line:
+              relaxed = True
+          elif nsw is None and "NSW" in line:
+              match = _OUTCAR_NSW.search(line)
+              if match:
+                  nsw = int(match.group(1))
+          elif ibrion is None and "IBRION" in line:
+              match = _OUTCAR_IBRION.search(line)
+              if match:
+                  ibrion = int(match.group(1))
+  result = OutcarInfo(energy, volume, finished, nsw, ibrion, relaxed)
+  if _outcar_cache is not None:
+      _outcar_cache[key] = result
+  return result
 
 
 def _read_last_outcar_energy(outcar_path):
-  free_energy = None
-  entropy_energy = None
-  with open(outcar_path) as handle:
-      for line in handle:
-          if "free  energy   TOTEN" in line:
-              parts = line.split()
-              if len(parts) >= 5:
-                  try:
-                      free_energy = float(parts[4])
-                  except ValueError:
-                      continue
-          elif "energy  without entropy=" in line and "energy(sigma->0)" in line:
-              parts = line.split()
-              if len(parts) >= 7:
-                  try:
-                      entropy_energy = float(parts[6])
-                  except ValueError:
-                      continue
-  if free_energy is not None:
-      return free_energy
-  if entropy_energy is not None:
-      return entropy_energy
-  raise ValueError("No energy line found in {}".format(outcar_path))
+  """energy(sigma->0) of the final ionic step of a finished (and, for
+  relaxations, converged) run."""
+  info = _scan_outcar(outcar_path)
+  if info.energy is None:
+      raise MissingEnergyError(
+          "No 'energy(sigma->0)' line found in {} (unfinished or failed run?)".format(outcar_path))
+  if not info.finished:
+      raise MissingEnergyError(
+          "Run did not finish in {}: no '{}' footer (killed, out of walltime or still "
+          "running?)".format(outcar_path, _OUTCAR_FINISHED))
+  if (info.nsw or 0) > 0 and info.ibrion in _RELAXATION_IBRION and not info.relaxed:
+      raise MissingEnergyError(
+          "Ionic relaxation did not converge in {}: NSW = {} steps ran out before "
+          "'{}' (increase NSW and restart from CONTCAR)".format(outcar_path, info.nsw, _OUTCAR_RELAXED))
+  return info.energy
 
 
 def _read_energy(folder):
   outcar_path = os.path.join(folder, "OUTCAR")
-  if os.path.exists(outcar_path):
+  if not os.path.exists(outcar_path):
+      raise MissingEnergyError("OUTCAR not found in {}".format(folder))
+  return _read_last_outcar_energy(outcar_path)
+
+
+def check_energies(folders):
+  """Raise MissingEnergyError listing every folder without a usable OUTCAR energy."""
+  problems = []
+  for folder in folders:
       try:
-          return _read_last_outcar_energy(outcar_path)
-      except ValueError:
-          pass
-  oszicar_path = os.path.join(folder, "OSZICAR")
-  if os.path.exists(oszicar_path):
-      return _read_last_oszicar_energy(oszicar_path)
-  raise FileNotFoundError("Neither OUTCAR nor OSZICAR found in {}".format(folder))
+          _read_energy(folder)
+      except MissingEnergyError as exc:
+          problems.append(str(exc))
+  if problems:
+      raise MissingEnergyError(
+          "Cannot post-process: {} strain folder(s) have no OUTCAR energy:\n  ".format(len(problems))
+          + "\n  ".join(problems))
 
 
 def _read_volume_from_outcar(outcar_path):
-  volume = None
-  with open(outcar_path) as handle:
-      for line in handle:
-          if "volume of cell" not in line:
-              continue
-          parts = line.split()
-          if not parts:
-              continue
-          try:
-              volume = float(parts[-1])
-          except ValueError:
-              continue
+  volume = _scan_outcar(outcar_path).volume
   if volume is None:
       raise ValueError("No volume line found in {}".format(outcar_path))
   return volume
 
 
 def _read_volume_from_poscar(poscar_path):
-  with open(poscar_path) as handle:
-      lines = handle.readlines()
-  if len(lines) < 5:
-      raise ValueError("POSCAR is too short in {}".format(poscar_path))
-  scale = float(lines[1].split()[0])
-  lattice = np.array([[float(k) for k in lines[i].split()] for i in range(2, 5)])
-  if scale < 0:
-      return abs(scale)
-  return abs(np.linalg.det(lattice)) * scale ** 3
+  lines = poscar.read(poscar_path)
+  return abs(np.linalg.det(poscar.lattice(lines)))
 
 
-def _read_volume(base_dir, zero_folder):
-  if not os.path.isabs(zero_folder):
-      zero_folder = os.path.join(base_dir, zero_folder)
-  outcar_path = os.path.join(zero_folder, "OUTCAR")
+def _read_volume(folder):
+  """Cell volume from a folder's OUTCAR, else its POSCAR."""
+  outcar_path = os.path.join(folder, "OUTCAR")
   if os.path.exists(outcar_path):
       try:
           return _read_volume_from_outcar(outcar_path)
       except ValueError:
           pass
-  poscar_path = os.path.join(zero_folder, "POSCAR")
+  poscar_path = os.path.join(folder, "POSCAR")
   if os.path.exists(poscar_path):
       return _read_volume_from_poscar(poscar_path)
-  raise FileNotFoundError("Neither OUTCAR nor POSCAR found in {}".format(zero_folder))
+  raise FileNotFoundError("Neither OUTCAR nor POSCAR found in {}".format(folder))
+
+
+def _reference_volume(base_dir, zero_folder):
+  """Unstrained volume V0.
+
+  zero_folder (relative to base_dir, or absolute) if given; otherwise the
+  strain_0.00-type folder; otherwise the unstrained POSCAR one level up (the
+  file pre-processing deformed).
+  """
+  if zero_folder is not None:
+      if not os.path.isabs(zero_folder):
+          zero_folder = os.path.join(base_dir, zero_folder)
+      return _read_volume(zero_folder)
+  found = _find_zero_strain_folder(base_dir)
+  if found is not None:
+      return _read_volume(found)
+  parent_poscar = os.path.join(base_dir, os.pardir, "POSCAR")
+  if os.path.exists(parent_poscar):
+      return _read_volume_from_poscar(parent_poscar)
+  raise FileNotFoundError(
+      "No zero-strain folder in {} and no unstrained POSCAR at {}; cannot get the "
+      "reference volume (pass zero_folder=...)".format(base_dir, os.path.normpath(parent_poscar)))
 
 
 def coeff(base_dir=".", zero_folder=None):
+  with outcar_cache():
+      return _coeff(base_dir, zero_folder)
+
+
+def _coeff(base_dir, zero_folder):
   # only strain_<value> folders; ignore anything else the user keeps here
   d=sorted(glob(os.path.join(base_dir, "strain_*/")))
   if not d:
       raise FileNotFoundError("No strain_* folders found in {}".format(base_dir))
+  if len(d) < 3:
+      raise ValueError("{} has only {} strain folder(s); the quadratic E(s) fit needs at "
+                       "least 3".format(base_dir, len(d)))
+  check_energies(d)
   strains = []
   energies = []
   for folder in d:
@@ -143,9 +210,7 @@ def coeff(base_dir=".", zero_folder=None):
       energies.append(_read_energy(folder))
   data = np.array(energies) - np.amin(energies)
 
-  if zero_folder is None:
-      zero_folder = _find_zero_strain_folder(base_dir) or os.path.join(base_dir, "strain_0.00")
-  Vol = _read_volume(base_dir, zero_folder)
+  Vol = _reference_volume(base_dir, zero_folder)
 
   pp=[float(k) for k in strains]
   out=np.stack((np.array(pp), data), axis=-1)
@@ -164,7 +229,15 @@ def coeff(base_dir=".", zero_folder=None):
   ybar = sum(valeur_min)/len(valeur_min)
   SST = sum((valeur_min - ybar)**2)
   SSreg = sum((yhat - ybar)**2)
-  R2 = SSreg/SST
+  if SST <= 1e-30:
+      # identical energies: the deformation had no effect (e.g. VASP rescaled the
+      # cell, or every run returned the same unconverged energy)
+      warnings.warn("All energies in {} are identical, so E(s) is flat and the fitted "
+                    "coefficient is meaningless. Check these calculations.".format(base_dir),
+                    UserWarning, stacklevel=2)
+      R2 = float("nan")
+  else:
+      R2 = SSreg/SST
   image = os.path.join(base_dir, 'plot.jpg')
   lege = 'R^2='+str(R2)
  #=================================

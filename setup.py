@@ -16,8 +16,9 @@ setup(
     author_email='prnvkmr4@gmail.com',
     license='MIT Licence',
     packages=['elastic_vasp'],
+    python_requires='>=3.7',  # dataclasses
     install_requires=['numpy',
-                      'matplotlib'                     
+                      'matplotlib',
                       ],
 
     classifiers=[
@@ -25,11 +26,14 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',  
         'Operating System :: POSIX :: Linux',        
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
     ],
 )
 

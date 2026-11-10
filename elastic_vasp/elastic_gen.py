@@ -4,20 +4,57 @@ Created on Sat Jun  5 19:16:26 2021
 @author: pranav
 """
 import os
+import re
 import shutil
 
-from elastic_vasp import orientation
+import numpy as np
+
+from elastic_vasp import orientation, poscar
+from elastic_vasp.systems import SYSTEMS
 from elastic_vasp.target import calc_gen
 
 
+DEFAULT_STRAINS = "-0.03,-0.02,-0.01,0.00,0.01,0.02,0.03"
+
+
 def _read_strains(path="strain.dat"):
+    """All strain values in strain.dat: comma- and/or whitespace-separated, on
+    any number of lines; '#' starts a comment.
+
+    If the file does not exist it is created with DEFAULT_STRAINS (the values
+    used in the examples), so the choice is visible and can be edited.
+    """
+    if not os.path.exists(path):
+        with open(path, "w") as f:
+            f.write(DEFAULT_STRAINS + "\n")
+        print("{} not found: created it with the default strains {}. Edit it and "
+              "rerun with overwrite=True to use other values.".format(path, DEFAULT_STRAINS))
+    strains = []
     with open(path) as f:
         for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            return [item.strip() for item in line.split(",") if item.strip()]
-    raise ValueError("strain.dat does not contain any strain values")
+            line = line.split("#", 1)[0]
+            strains.extend(item for item in re.split(r"[,\s]+", line) if item)
+    if not strains:
+        raise ValueError("strain.dat does not contain any strain values")
+    # fail early (before any folder is touched) on typos and repeated values,
+    # e.g. "0.00" and "-0.00" would both become strain_0.00
+    seen = set()
+    duplicates = []
+    for item in strains:
+        try:
+            value = float(item)
+        except ValueError:
+            raise ValueError("{}: '{}' is not a number".format(path, item)) from None
+        if value in seen:
+            duplicates.append(item)
+        seen.add(value)
+    if duplicates:
+        raise ValueError("strain.dat lists the same strain more than once: {}".format(
+            ", ".join(duplicates)))
+    if len(strains) < 3:
+        raise ValueError("{} has only {} strain value(s); the quadratic E(s) fit needs at "
+                         "least 3 (e.g. {})".format(path, len(strains), DEFAULT_STRAINS))
+    return strains
 
 
 def _normalize_strain_label(raw_strain):
@@ -34,13 +71,21 @@ def _reset_folder(folder):
         os.remove(folder)
 
 
-def _square_ratio(value, denominator):
-    if abs(denominator) < 1e-15:
-        raise ValueError("Invalid strain value {} produces division by zero".format(value))
-    return (value ** 2) / denominator
+
+def _check_poscar(path="POSCAR"):
+    """Fail before any folder is touched if POSCAR is missing or unreadable."""
+    if not os.path.exists(path):
+        raise FileNotFoundError("{} not found in {}; nothing was changed.".format(path, os.getcwd()))
+    try:
+        cell = poscar.lattice(poscar.read(path))
+    except (ValueError, IndexError) as exc:
+        raise ValueError("{} could not be read ({}); nothing was changed.".format(path, exc)) from None
+    if abs(np.linalg.det(cell)) < 1e-8:
+        raise ValueError("{} has a degenerate lattice (zero volume); nothing was changed.".format(path))
 
 
 def _generate_preprocessing(folder_specs, overwrite=False):
+    _check_poscar()
     strains = _read_strains()
     cwd = os.getcwd()
 
@@ -73,40 +118,24 @@ def _generate_preprocessing(folder_specs, overwrite=False):
             os.remove(output_path)
 
 
+def generate(system, overwrite=False):
+    """Create the deformation folders for a crystal system from systems.SYSTEMS."""
+    spec = SYSTEMS[system]
+    _generate_preprocessing([(d.folder, d.at) for d in spec.deformations], overwrite)
+
+
 def cubic_pre(overwrite=False):
-    _generate_preprocessing([
-        ("C11_C12_I", lambda s: (s, -s, 0.0, 0.0, 0.0, 0.0)),
-        ("C11_C12_II", lambda s: (s, s, s, 0.0, 0.0, 0.0)),
-        ("C44", lambda s: (0.0, 0.0, 0.0, s, s, s)),
-    ], overwrite)
-    return
+    generate("cubic", overwrite)
 
 
 def orthogonal_pre(overwrite=False):
-    _generate_preprocessing([
-        ("C11_C22_C12_I", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
-        ("C11_C22_C12_II", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
-        ("C22_C33_C23_I", lambda s: (_square_ratio(s, 1 - s ** 2), s, -s, 0.0, 0.0, 0.0)),
-        ("C22_C33_C23_II", lambda s: (0.0, s, s, 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_I", lambda s: (s, _square_ratio(s, 1 - s ** 2), -s, 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_II", lambda s: (s, 0.0, s, 0.0, 0.0, 0.0)),
-        ("C44", lambda s: (_square_ratio(s, 4 - s ** 2), 0.0, 0.0, s, 0.0, 0.0)),
-        ("C55", lambda s: (0.0, _square_ratio(s, 4 - s ** 2), 0.0, 0.0, s, 0.0)),
-        ("C66", lambda s: (0.0, 0.0, _square_ratio(s, 4 - s ** 2), 0.0, 0.0, s)),
-    ], overwrite)
-    return
+    generate("orthogonal", overwrite)
 
 
 def hexagonal_pre(overwrite=False):
+    _check_poscar()
     orientation.check_threefold_z(system="hexagonal")
-    _generate_preprocessing([
-        ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
-        ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_I", lambda s: (s, _square_ratio(s, 1 - s ** 2), -s, 0.0, 0.0, 0.0)),
-        ("C44", lambda s: (0.0, 0.0, 0.0, s, s, 0.0)),
-        ("C11_C12_C13_C33", lambda s: (s, s, s, 0.0, 0.0, 0.0)),
-    ], overwrite)
-    return
+    generate("hexagonal", overwrite)
 
 
 def trigonal_1_pre(overwrite=False):
@@ -115,74 +144,22 @@ def trigonal_1_pre(overwrite=False):
           "a along x, but NOT for '31m'-type groups (P-31m, P-31c, P31m, P31c, P312, ...). "
           "If unsure, use trigonal_2_pre() instead: it fits C14 and C15 together and works "
           "for any in-plane orientation.")
+    _check_poscar()
     orientation.check_threefold_z(system="trigonal")
-    _generate_preprocessing([
-        ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
-        ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_I", lambda s: (s, 0.0, s, 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_II", lambda s: (s, _square_ratio(s, 1 - s ** 2), -s, 0.0, 0.0, 0.0)),
-        ("C11_C44_C14_I", lambda s: (s, 0.0, 0.0, s, 0.0, 0.0)),
-        ("C11_C44_C14_II", lambda s: (s, 0.0, 0.0, -s, 0.0, 0.0)),
-    ], overwrite)
-    return
+    generate("trigonal_1", overwrite)
 
 
 def trigonal_2_pre(overwrite=False):
+    _check_poscar()
     orientation.check_threefold_z(system="trigonal")
-    _generate_preprocessing([
-        ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
-        ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_I", lambda s: (s, 0.0, s, 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_II", lambda s: (s, _square_ratio(s, 1 - s ** 2), -s, 0.0, 0.0, 0.0)),
-        ("C11_C44_C14_I", lambda s: (s, 0.0, 0.0, s, 0.0, 0.0)),
-        ("C11_C44_C14_II", lambda s: (s, 0.0, 0.0, -s, 0.0, 0.0)),
-        ("C11_C44_C15", lambda s: (s, 0.0, 0.0, 0.0, -s, 0.0)),
-    ], overwrite)
-    return
+    generate("trigonal_2", overwrite)
 
 
 def monoclinic_pre(overwrite=False):
+    _check_poscar()
     orientation.check_monoclinic()
-    _generate_preprocessing([
-        ("C11_C22_C12_I", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
-        ("C11_C22_C12_II", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
-        ("C22_C33_C23_I", lambda s: (_square_ratio(s, 1 - s ** 2), s, -s, 0.0, 0.0, 0.0)),
-        ("C22_C33_C23_II", lambda s: (0.0, s, s, 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_I", lambda s: (s, _square_ratio(s, 1 - s ** 2), -s, 0.0, 0.0, 0.0)),
-        ("C11_C33_C13_II", lambda s: (s, 0.0, s, 0.0, 0.0, 0.0)),
-        ("C44", lambda s: (_square_ratio(s, 4 - s ** 2), 0.0, 0.0, s, 0.0, 0.0)),
-        ("C11_C55_C15_I", lambda s: (s, 0.0, 0.0, 0.0, s, 0.0)),
-        ("C11_C55_C15_II", lambda s: (s, 0.0, 0.0, 0.0, -s, 0.0)),
-        ("C22_C55_C25", lambda s: (0.0, s, 0.0, 0.0, s, 0.0)),
-        ("C33_C55_C35", lambda s: (0.0, 0.0, s, 0.0, s, 0.0)),
-        ("C44_C66_C46_I", lambda s: (0.0, 0.0, 0.0, s, 0.0, s)),
-        ("C44_C66_C46_II", lambda s: (0.0, 0.0, 0.0, s, 0.0, -s)),
-    ], overwrite)
-    return
+    generate("monoclinic", overwrite)
 
 
 def triclinic_pre(overwrite=False):
-    _generate_preprocessing([
-        ("C11", lambda s: (s, 0.0, 0.0, 0.0, 0.0, 0.0)),
-        ("C11_C22_C12", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
-        ("C22", lambda s: (0.0, s, 0.0, 0.0, 0.0, 0.0)),
-        ("C22_C33_C23", lambda s: (0.0, s, s, 0.0, 0.0, 0.0)),
-        ("C33", lambda s: (0.0, 0.0, s, 0.0, 0.0, 0.0)),
-        ("C11_C33_C13", lambda s: (s, 0.0, s, 0.0, 0.0, 0.0)),
-        ("C44", lambda s: (0.0, 0.0, 0.0, s, 0.0, 0.0)),
-        ("C55", lambda s: (0.0, 0.0, 0.0, 0.0, s, 0.0)),
-        ("C66", lambda s: (0.0, 0.0, 0.0, 0.0, 0.0, s)),
-        ("C11_C44_C14", lambda s: (s, 0.0, 0.0, s, 0.0, 0.0)),
-        ("C11_C55_C15", lambda s: (s, 0.0, 0.0, 0.0, s, 0.0)),
-        ("C11_C66_C16", lambda s: (s, 0.0, 0.0, 0.0, 0.0, s)),
-        ("C22_C44_C24", lambda s: (0.0, s, 0.0, s, 0.0, 0.0)),
-        ("C22_C55_C25", lambda s: (0.0, s, 0.0, 0.0, s, 0.0)),
-        ("C22_C66_C26", lambda s: (0.0, s, 0.0, 0.0, 0.0, s)),
-        ("C33_C44_C34", lambda s: (0.0, 0.0, s, s, 0.0, 0.0)),
-        ("C33_C55_C35", lambda s: (0.0, 0.0, s, 0.0, s, 0.0)),
-        ("C33_C66_C36", lambda s: (0.0, 0.0, s, 0.0, 0.0, s)),
-        ("C44_C55_C45", lambda s: (0.0, 0.0, 0.0, s, s, 0.0)),
-        ("C44_C66_C46", lambda s: (0.0, 0.0, 0.0, s, 0.0, s)),
-        ("C55_C66_C56", lambda s: (0.0, 0.0, 0.0, 0.0, s, s)),
-    ], overwrite)
-    return
+    generate("triclinic", overwrite)

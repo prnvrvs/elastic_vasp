@@ -75,6 +75,8 @@ Things to keep in mind:
 3. You should know the symmetry of the crystal before preprocessing. Use the example folders for tests. To determine symmetry, use spglib or phonopy.
 4. Preprocessing refuses to run if the deformation folders already exist, so finished calculations are not deleted by accident. Pass `overwrite=True` (e.g. `cubic_pre(overwrite=True)`) to regenerate them.
 5. Post-processing auto-detects the zero-strain folder from the `strain_*` names, so it no longer depends on `strain_0.00` specifically.
+6. Post-processing reads the energy from `energy(sigma->0)` of the final ionic step in each OUTCAR (OSZICAR is not used). If any strain folder has no OUTCAR, an OUTCAR without that line, or a run that did not finish normally (no `General timing and accounting` footer, e.g. killed by the walltime), or an ionic relaxation (`NSW > 0`, `IBRION` = 1, 2 or 3) that ran out of steps without `reached required accuracy`, it lists every such folder and stops before fitting.
+7. `strain.dat` may list strains separated by commas and/or spaces, over several lines (`#` starts a comment). At least 3 values are needed for the quadratic fit. If it is missing, pre-processing creates it with `-0.03,-0.02,-0.01,0.00,0.01,0.02,0.03` and says so. Pre-processing checks POSCAR and strain.dat before deleting or creating any folder.
 
 | Crystal system       | Space-group          |No. of independent elastic constants  |
 | ------------- |:-------------:| -----:|

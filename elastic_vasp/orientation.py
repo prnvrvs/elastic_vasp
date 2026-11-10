@@ -20,15 +20,23 @@ from math import gcd, pi
 
 import numpy as np
 
+from elastic_vasp import poscar
+
 LATTICE_TOL = 1e-3
 REORIENTED_NAME = "POSCAR.reoriented"
 
 
 def _read_poscar(path):
-    with open(path) as fh:
-        lines = fh.readlines()
-    lattice = np.array([[float(x) for x in lines[i].split()[:3]] for i in range(2, 5)])
-    return lines, lattice
+    """Lines, lattice rows and the scale line to write with those rows.
+
+    With a single positive scale the rows are kept as written (the scale only
+    changes lengths, not directions). Negative or per-axis scales are applied,
+    because they can change directions, and the copy is written with scale 1.0.
+    """
+    lines = poscar.read(path)
+    if poscar.is_plain_scale(lines):
+        return lines, poscar.raw_lattice(lines), lines[1]
+    return lines, poscar.lattice(lines), "1.0\n"
 
 
 def _uses_cartesian_coordinates(lines):
@@ -89,7 +97,7 @@ def _align(n, target):
 
 
 def _check_axis(poscar_path, system, fold, angle, target, target_name):
-    lines, lattice = _read_poscar(poscar_path)
+    lines, lattice, scale_line = _read_poscar(poscar_path)
     target = np.asarray(target, float)
     if _is_lattice_symmetry(lattice, _rotation(target, angle)):
         return True
@@ -116,7 +124,8 @@ def _check_axis(poscar_path, system, fold, angle, target, target_name):
             rotated = lattice @ _align(n, target).T
             out_path = os.path.join(os.path.dirname(poscar_path), REORIENTED_NAME)
             with open(out_path, "w") as fh:
-                fh.writelines(lines[:2])
+                fh.write(lines[0])
+                fh.write(scale_line)
                 for row in rotated:
                     fh.write("  {:18.12f}  {:18.12f}  {:18.12f}\n".format(*row))
                 fh.writelines(lines[5:])
