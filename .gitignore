@@ -1,0 +1,10 @@
+# build / packaging artefacts
+build/
+dist/
+*.egg-info/
+PKG-INFO
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/

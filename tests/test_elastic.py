@@ -31,6 +31,28 @@ def _poscar(lattice):
     ) + "Al\n1\nDirect\n0 0 0\n"
 
 
+def outcar_text(volume, e0):
+    """A realistic OUTCAR fragment whose energy(sigma->0) is e0.
+
+    TOTEN (the free energy F) is deliberately different and not a constant
+    offset, so a reader that picks the wrong line gives wrong constants.
+    The per-SCF-step lines (single spaces, as VASP writes them) come first;
+    the final ionic-step summary is the last match.
+    """
+    toten = 1.1 * e0 + 0.01
+    return (
+        "  volume of cell :   %.8f\n"
+        "  free energy    TOTEN  =   %.12f eV\n"
+        "  energy without entropy =   %.12f  energy(sigma->0) =   %.12f\n"
+        "  FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)\n"
+        "  ---------------------------------------------------\n"
+        "  free  energy   TOTEN  =   %.12f eV\n\n"
+        "  energy  without entropy=   %.12f  energy(sigma->0) =   %.12f\n"
+        "\n General timing and accounting informations for this job:\n"
+        % (volume, toten + 5.0, e0 + 5.0, e0 + 5.0, toten, e0, e0)
+    )
+
+
 def _sym(upper):
     m = np.array(upper, float)
     return np.triu(m) + np.triu(m, 1).T
@@ -60,10 +82,7 @@ def _run(system, c_true, tmp_path, monkeypatch):
     for poscar in tmp_path.glob("*/strain_*/POSCAR"):
         eps = _voigt_strain(poscar, lattice)
         energy = volume * 0.5 * eps @ c_true @ eps / EV_PER_A3_TO_GPA
-        (poscar.parent / "OUTCAR").write_text(
-            "  volume of cell :   %.8f\n"
-            "  free  energy   TOTEN  =   %.12f eV\n" % (volume, energy)
-        )
+        (poscar.parent / "OUTCAR").write_text(outcar_text(volume, energy))
 
     with contextlib.redirect_stdout(io.StringIO()):
         c_out = getattr(constants, system + "_post")()
@@ -116,22 +135,54 @@ def test_pre_refuses_to_overwrite_existing_results(tmp_path, monkeypatch):
     assert not outcar.exists()
 
 
-def test_oszicar_prefers_e0(tmp_path):
-    oszicar = tmp_path / "OSZICAR"
-    oszicar.write_text(
-        "DAV:   1    -0.1E+02\n"
-        "   1 F= -.10000000E+02 E0= -.11000000E+02  d E =-.1E+02\n"
-    )
-    assert coefficient._read_last_oszicar_energy(str(oszicar)) == pytest.approx(-11.0)
-
-
 def test_coeff_ignores_non_strain_folders(tmp_path):
     for label, energy in (("-0.01", 1e-3), ("0.00", 0.0), ("0.01", 1e-3)):
         folder = tmp_path / ("strain_" + label)
         folder.mkdir()
-        (folder / "OUTCAR").write_text(
-            "  volume of cell :   10.0\n  free  energy   TOTEN  =   %.6f eV\n" % energy
-        )
+        (folder / "OUTCAR").write_text(outcar_text(10.0, energy))
     (tmp_path / "notes").mkdir()
     # E/V = a * s^2 with a = 1e-3 / 10 / 1e-4 eV/A^3
     assert coefficient.coeff(str(tmp_path)) == pytest.approx(1.0 * EV_PER_A3_TO_GPA, rel=1e-6)
+
+
+def test_outcar_energy_is_sigma0_of_final_step(tmp_path):
+    outcar = tmp_path / "OUTCAR"
+    outcar.write_text(outcar_text(20.0, -10.25))
+    # last energy(sigma->0) (final ionic step), not TOTEN and not an earlier SCF step
+    assert coefficient._read_last_outcar_energy(str(outcar)) == pytest.approx(-10.25)
+
+
+def test_oszicar_is_not_used(tmp_path):
+    folder = tmp_path / "strain_0.01"
+    folder.mkdir()
+    (folder / "OSZICAR").write_text("   1 F= -.11E+02 E0= -.10E+02  d E =-.1E+02\n")
+    with pytest.raises(coefficient.MissingEnergyError, match="OUTCAR not found"):
+        coefficient._read_energy(str(folder))
+
+
+def test_unfinished_outcar_raises(tmp_path):
+    outcar = tmp_path / "OUTCAR"
+    outcar.write_text(" running on    8 total cores\n")
+    with pytest.raises(coefficient.MissingEnergyError, match="No 'energy\\(sigma->0\\)' line"):
+        coefficient._read_last_outcar_energy(str(outcar))
+
+
+def test_post_lists_every_problem_and_stops(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "POSCAR").write_text(_poscar(GENERIC))
+    (tmp_path / "strain.dat").write_text("-0.01,0.00,0.01\n")
+    eg.cubic_pre()
+    volume = abs(np.linalg.det(GENERIC))
+    for poscar in tmp_path.glob("*/strain_*/POSCAR"):
+        (poscar.parent / "OUTCAR").write_text(outcar_text(volume, 0.0))
+    (tmp_path / "C44" / "strain_0.01" / "OUTCAR").unlink()
+    (tmp_path / "C11_C12_I" / "strain_-0.01" / "OUTCAR").write_text("crashed\n")
+
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out), pytest.raises(coefficient.MissingEnergyError) as err:
+        constants.cubic_post()
+    message = str(err.value)
+    assert "2 problem(s)" in message
+    assert "C44" in message and "strain_0.01" in message and "OUTCAR not found" in message
+    assert "C11_C12_I" in message and "strain_-0.01" in message and "energy(sigma->0)" in message
+    assert out.getvalue() == ""  # stopped before printing or fitting anything
