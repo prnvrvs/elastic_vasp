@@ -7,7 +7,7 @@ recovered.
 """
 import contextlib
 import io
-import os
+import warnings
 
 import matplotlib
 
@@ -20,11 +20,15 @@ from elastic_vasp import coefficient, constants  # noqa: E402
 from elastic_vasp import elastic_gen as eg  # noqa: E402
 
 EV_PER_A3_TO_GPA = 160.2176621
-LATTICE = np.array([[3.0, 0.0, 0.0], [0.0, 3.2, 0.0], [0.3, 0.0, 3.5]])
-VOLUME = abs(np.linalg.det(LATTICE))
-POSCAR = "test\n1.0\n" + "".join(
-    " ".join("%.6f" % v for v in row) + "\n" for row in LATTICE
-) + "Al\n1\nDirect\n0 0 0\n"
+# b-unique monoclinic cell (2-fold along y); fine for the systems without a check
+GENERIC = np.array([[3.0, 0.0, 0.0], [0.0, 3.2, 0.0], [0.3, 0.0, 3.5]])
+HEXAGONAL = np.array([[3.0, 0.0, 0.0], [-1.5, 1.5 * np.sqrt(3), 0.0], [0.0, 0.0, 5.0]])
+
+
+def _poscar(lattice):
+    return "test\n1.0\n" + "".join(
+        " ".join("%.12f" % v for v in row) + "\n" for row in lattice
+    ) + "Al\n1\nDirect\n0 0 0\n"
 
 
 def _sym(upper):
@@ -32,28 +36,33 @@ def _sym(upper):
     return np.triu(m) + np.triu(m, 1).T
 
 
-def _voigt_strain(poscar_path):
+def _voigt_strain(poscar_path, reference):
     """Recover the applied Voigt strain from a generated POSCAR."""
     with open(poscar_path) as fh:
         lines = fh.readlines()
     lattice = np.array([[float(x) for x in lines[i].split()] for i in range(2, 5)])
-    f = np.linalg.solve(LATTICE, lattice)  # lattice = LATTICE @ f
+    f = np.linalg.solve(reference, lattice)  # lattice = reference @ f
     return np.array([f[0, 0] - 1, f[1, 1] - 1, f[2, 2] - 1,
                      2 * f[1, 2], 2 * f[0, 2], 2 * f[0, 1]])
 
 
 def _run(system, c_true, tmp_path, monkeypatch):
+    lattice = HEXAGONAL if system in ("hexagonal", "trigonal_1", "trigonal_2") else GENERIC
+    volume = abs(np.linalg.det(lattice))
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "POSCAR").write_text(POSCAR)
+    (tmp_path / "POSCAR").write_text(_poscar(lattice))
     (tmp_path / "strain.dat").write_text("-0.02,-0.01,0.00,0.01,0.02\n")
-    getattr(eg, system + "_pre")()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # correctly oriented cells must not warn
+        with contextlib.redirect_stdout(io.StringIO()):
+            getattr(eg, system + "_pre")()
 
     for poscar in tmp_path.glob("*/strain_*/POSCAR"):
-        eps = _voigt_strain(poscar)
-        energy = VOLUME * 0.5 * eps @ c_true @ eps / EV_PER_A3_TO_GPA
+        eps = _voigt_strain(poscar, lattice)
+        energy = volume * 0.5 * eps @ c_true @ eps / EV_PER_A3_TO_GPA
         (poscar.parent / "OUTCAR").write_text(
             "  volume of cell :   %.8f\n"
-            "  free  energy   TOTEN  =   %.12f eV\n" % (VOLUME, energy)
+            "  free  energy   TOTEN  =   %.12f eV\n" % (volume, energy)
         )
 
     with contextlib.redirect_stdout(io.StringIO()):
@@ -93,7 +102,7 @@ def test_recovers_stiffness(system, tmp_path, monkeypatch):
 
 def test_pre_refuses_to_overwrite_existing_results(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "POSCAR").write_text(POSCAR)
+    (tmp_path / "POSCAR").write_text(_poscar(GENERIC))
     (tmp_path / "strain.dat").write_text("-0.01,0.00,0.01\n")
     eg.cubic_pre()
     outcar = tmp_path / "C44" / "strain_0.01" / "OUTCAR"

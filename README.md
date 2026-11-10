@@ -74,7 +74,7 @@ Things to keep in mind:
 2. Use ISIF=2 only for calculation
 3. You should know the symmetry of the crystal before preprocessing. Use the example folders for tests. To determine symmetry, use spglib or phonopy.
 4. Preprocessing refuses to run if the deformation folders already exist, so finished calculations are not deleted by accident. Pass `overwrite=True` (e.g. `cubic_pre(overwrite=True)`) to regenerate them.
-4. Post-processing auto-detects the zero-strain folder from the `strain_*` names, so it no longer depends on `strain_0.00` specifically.
+5. Post-processing auto-detects the zero-strain folder from the `strain_*` names, so it no longer depends on `strain_0.00` specifically.
 
 | Crystal system       | Space-group          |No. of independent elastic constants  |
 | ------------- |:-------------:| -----:|
@@ -92,6 +92,23 @@ Things to keep in mind:
 For tetragonal systems, it is usually simpler to calculate orthorhombic elastic constants first. That avoids confusion about which axis is longer and lets you compute all 9 elastic constants directly.
 
 Similarly, for trigonal systems, calculate all 7 elastic constants.
+
+**Note: use Trigonal II (`trigonal_2_pre()` / `trigonal_2_post()`) for all trigonal crystals unless you are sure of the in-plane orientation.** Trigonal I additionally assumes that x lies along a 2-fold axis (normal to a mirror plane). That holds for groups such as P-3m1, R-3m, P321 and R3m with a along x, but not for "31m"-type groups (P-31m, P-31c, P31m, P31c, P312, P3<sub>1</sub>12, P3<sub>2</sub>12). Trigonal II fits C14 and C15 together, so it is correct for any in-plane orientation at the cost of one extra deformation set.
+
+### Required orientation
+
+The strains are applied along the Cartesian x, y, z axes of the POSCAR lattice, so the crystal must be aligned accordingly:
+
+| Function | Required orientation |
+| --- | --- |
+| `cubic_*` | cube axes along x, y, z (standard conventional or primitive fcc/bcc cells are fine) |
+| `orthogonal_*` | a ∥ x, b ∥ y, c ∥ z |
+| `hexagonal_*`, `trigonal_2_*` | c (6-fold/3-fold axis) ∥ z, any in-plane orientation |
+| `trigonal_1_*` | c ∥ z and x along a 2-fold axis (see note above) |
+| `monoclinic_*` | unique axis (b, the 2-fold axis) ∥ y; a and c in the xz plane |
+| `triclinic_*` | any |
+
+`hexagonal_pre()`, `trigonal_1_pre()`, `trigonal_2_pre()` and `monoclinic_pre()` check this automatically. This covers rhombohedral cells, e.g. a primitive cell with the 3-fold axis along [111], and c-unique monoclinic cells. If the axis is misaligned they print a warning saying where the axis actually is, write a rotated copy to `POSCAR.reoriented` (a pure rotation: fractional coordinates and atom order are unchanged, so POTCAR and MAGMOM ordering stay valid) and then continue with the current orientation. To use the rotated cell, copy `POSCAR.reoriented` over `POSCAR` and rerun the pre-processing with `overwrite=True`.
 
 
 **For any contact, visit my homepage**\

@@ -6,6 +6,7 @@ Created on Sat Jun  5 19:16:26 2021
 import os
 import shutil
 
+from elastic_vasp import orientation
 from elastic_vasp.target import calc_gen
 
 
@@ -97,6 +98,7 @@ def orthogonal_pre(overwrite=False):
 
 
 def hexagonal_pre(overwrite=False):
+    orientation.check_threefold_z(system="hexagonal")
     _generate_preprocessing([
         ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
         ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
@@ -108,6 +110,12 @@ def hexagonal_pre(overwrite=False):
 
 
 def trigonal_1_pre(overwrite=False):
+    print("Note: trigonal_1 (point groups 32, 3m, -3m) also assumes x lies along a 2-fold "
+          "axis / normal to a mirror plane. This holds for e.g. P-3m1, R-3m, P321, R3m with "
+          "a along x, but NOT for '31m'-type groups (P-31m, P-31c, P31m, P31c, P312, ...). "
+          "If unsure, use trigonal_2_pre() instead: it fits C14 and C15 together and works "
+          "for any in-plane orientation.")
+    orientation.check_threefold_z(system="trigonal")
     _generate_preprocessing([
         ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
         ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
@@ -120,6 +128,7 @@ def trigonal_1_pre(overwrite=False):
 
 
 def trigonal_2_pre(overwrite=False):
+    orientation.check_threefold_z(system="trigonal")
     _generate_preprocessing([
         ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
         ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
@@ -133,6 +142,7 @@ def trigonal_2_pre(overwrite=False):
 
 
 def monoclinic_pre(overwrite=False):
+    orientation.check_monoclinic()
     _generate_preprocessing([
         ("C11_C22_C12_I", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
         ("C11_C22_C12_II", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
