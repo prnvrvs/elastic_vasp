@@ -1,5 +1,5 @@
 def loading():
-    print('''
+    print(r'''
           o      0000    000    0000   00000   0    0   00000
           o     0    0  0   0   0   0    0     0 0  0  0
           0     0    0  0 0 0   0   0    0     0  0 0  0  0000
@@ -9,13 +9,13 @@ def loading():
     return
 
 def baginga():
-     print('''       
+     print(r'''
                  .-"""-.
                 |=======|
                 |  6 6  |
                 ( \___/ )
    _________ooo__\_____/_____________
-  /                                  \\
+  /                                  \
  |                                    |
  | you should know what you are doing |
  | ==========   BAZINGAA   ========   |

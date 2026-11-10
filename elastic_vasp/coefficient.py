@@ -25,8 +25,13 @@ def _read_last_oszicar_energy(oszicar_path):
           parts = line.split()
           for idx, token in enumerate(parts):
               if token.startswith("E0="):
+                  # VASP writes "E0= -.1E+02" (value in the next token);
+                  # also accept the glued form "E0=-.1E+02".
+                  value = token.split("=", 1)[1]
+                  if not value and idx + 1 < len(parts):
+                      value = parts[idx + 1]
                   try:
-                      last_energy = float(token.split("=", 1)[1])
+                      last_energy = float(value)
                   except ValueError:
                       continue
               elif token == "F=" and idx + 1 < len(parts):
@@ -126,7 +131,10 @@ def _read_volume(base_dir, zero_folder):
 
 
 def coeff(base_dir=".", zero_folder=None):
-  d=sorted(glob(os.path.join(base_dir, "*/")))
+  # only strain_<value> folders; ignore anything else the user keeps here
+  d=sorted(glob(os.path.join(base_dir, "strain_*/")))
+  if not d:
+      raise FileNotFoundError("No strain_* folders found in {}".format(base_dir))
   strains = []
   energies = []
   for folder in d:

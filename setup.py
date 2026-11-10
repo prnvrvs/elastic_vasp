@@ -1,9 +1,16 @@
-from setuptools import setup, find_packages
+import os
+import re
+
+from setuptools import setup
+
+# Single source of truth for the version: elastic_vasp/__init__.py
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'elastic_vasp', '__init__.py')) as fh:
+    VERSION = re.search(r'^__version__\s*=\s*[\'"]([^\'"]+)[\'"]', fh.read(), re.M).group(1)
 
 setup(
     name='elastic_vasp',
-    version='0.0.5',    
-    description='A example Python package',
+    version=VERSION,
+    description='Second-order elastic constants from VASP energy-strain calculations',
     url='https://github.com/prnvrvs/elastic_vasp',
     author='PRANAV KUMAR',
     author_email='prnvkmr4@gmail.com',
