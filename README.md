@@ -73,6 +73,7 @@ Things to keep in mind:
 1. Use direct coordinate in initial POSCAR
 2. Use ISIF=2 only for calculation
 3. You should know the symmetry of the crystal before preprocessing. Use the example folders for tests. To determine symmetry, use spglib or phonopy.
+4. Preprocessing refuses to run if the deformation folders already exist, so finished calculations are not deleted by accident. Pass `overwrite=True` (e.g. `cubic_pre(overwrite=True)`) to regenerate them.
 4. Post-processing auto-detects the zero-strain folder from the `strain_*` names, so it no longer depends on `strain_0.00` specifically.
 
 | Crystal system       | Space-group          |No. of independent elastic constants  |

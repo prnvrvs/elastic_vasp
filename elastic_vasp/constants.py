@@ -54,7 +54,7 @@ def cubic_post():
     if (a>0)and(b>0)and(c>0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
-        print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
+        print("\033[1m"+"\033[1;31m structure is mechanically unstable"+"\033[0m")
     average.avg(stiffness)
     art.baginga()
     return stiffness
@@ -73,14 +73,13 @@ def hexagonal_post():
     eq2=2*(c11_c12_c13_c33-c11_c12_I)
     C13=(eq2-eq1)/6
     C33=eq1+2*C13
-    print(eq1,eq2)
     bulk=c11_c12_c13_c33*2/9
     print("second order coefficients are as follow:")
     print("C11_C12_I/=",c11_c12_I,"\nC11_C12_II/=",c11_c12_II,"C11_C33_C13_I/=",c11_c33_c13_I)
     print("C44/=",c44,"\nC11_C12_C13_C33/=",c11_c12_c13_c33)
     print('''
     Methodology
-    C11=(C11_C12_I/+C11_C12_I/)/2
+    C11=(C11_C12_I/+C11_C12_II/)/2
     C12=(C11_C12_I/-C11_C12_II/)/2
     eq1=2*C11_C33_C13_I/-C11
     eq2=2*(C11_C12_C13_C33/-C11_C12_I/)
@@ -108,7 +107,7 @@ def hexagonal_post():
     if (C11>abs(C12))and(C44>0)and((C11-C12)>0)and(a<b):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
-        print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
+        print("\033[1m"+"\033[1;31m structure is mechanically unstable"+"\033[0m")
     average.avg(stiffness)
     art.baginga()
     return stiffness
@@ -210,7 +209,7 @@ def orthogonal_post():
     if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
-        print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
+        print("\033[1m"+"\033[1;31m structure is mechanically unstable"+"\033[0m")
     average.avg(stiffness)
     art.baginga()
     return stiffness
@@ -273,7 +272,7 @@ def trigonal_1_post():
     if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
-        print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
+        print("\033[1m"+"\033[1;31m structure is mechanically unstable"+"\033[0m")
     average.avg(stiffness)
     art.baginga()
 
@@ -303,13 +302,21 @@ def trigonal_2_post():
     C13=(C-D)/2
     C44=(E+F)-C11
     C14=(E-F)/2 
-    C15=G-(C11/2)-(C44)/2
+    # C11_C44_C15 uses strain (s,0,0,0,-s,0): E/V = (C11+C44-2*C15)/2 * s^2
+    C15=(C11+C44)/2-G
     C66=(C11-C12)/2
     print("second order coefficients are as follow:")
+    print("C11_C12_I/=",c11_c12_I,"\nC11_C12_II/=",c11_c12_II)
+    print("C11_C33_C13_I/=",c11_c33_c13_I,"\nC11_C33_C13_II=",c11_c33_c13_II)
+    print("C11_C44_C14_I/=",c11_c44_c14_I,"\nC11_C44_C14_II/=",c11_c44_c14_II)
+    print("C11_C44_C15/=",c11_c44_c15)
+    print("C11=",C11,"\nC33=",C33,"\nC12=",C12,"\nC13=",C13)
+    print("C44=",C44,"\nC14=",C14,"\nC15=",C15,"\nC66=",C66)
 
     print('''
             ==== stiffness matrix ====''')
-    stiffness=np.array([[C11,C12,C13,C14,0,0],[C12,C11,C13,-1*C14,0,0],[C13,C13,C33,0,0,0],[C14,-1*C14,0,C44,0,0],[0,0,0,0,C44,C14],[0,0,0,0,C14,C66]])
+    # trigonal II (classes 3, -3): C25=-C15, C46=-C15 in addition to the trigonal I terms
+    stiffness=np.array([[C11,C12,C13,C14,C15,0],[C12,C11,C13,-1*C14,-1*C15,0],[C13,C13,C33,0,0,0],[C14,-1*C14,0,C44,0,-1*C15],[C15,-1*C15,0,0,C44,C14],[0,0,0,-1*C15,C14,C66]])
 
     print(np.around(stiffness,decimals=2))
 
@@ -323,7 +330,7 @@ def trigonal_2_post():
     if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
-        print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
+        print("\033[1m"+"\033[1;31m structure is mechanically unstable"+"\033[0m")
     average.avg(stiffness)
     art.baginga()
 
@@ -382,11 +389,13 @@ def monoclinic_post():
     C13=FF
     C44=GG
     C55=(H+I)-C11
-    C15=(I-H)/2
+    # H=(s,0,0,0,s,0) and I=(s,0,0,0,-s,0), so H-I = 2*C15
+    C15=(H-I)/2
     C25=J-(C22/2)-(C55/2)
     C35=K-(C33/2)-(C55/2)
     C66=(L+M)-C44
-    C46=(M-L)/2
+    # L=(0,0,0,s,0,s) and M=(0,0,0,s,0,-s), so L-M = 2*C46
+    C46=(L-M)/2
 
 
     print('''
@@ -405,7 +414,7 @@ def monoclinic_post():
     if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
-        print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
+        print("\033[1m"+"\033[1;31m structure is mechanically unstable"+"\033[0m")
     average.avg(stiffness)
     art.baginga()
     return stiffness
@@ -524,7 +533,7 @@ def triclinic_post():
     if np.all(np.real(np.linalg.eigvals(stiffness)) > 0):
         print("\033[1m"+"\033[1;32m structure is mechanically stable"+"\033[0m")
     else:
-        print("\033[1m"+"\033[1;32m structure is mechanically unstable"+"\033[0m")
+        print("\033[1m"+"\033[1;31m structure is mechanically unstable"+"\033[0m")
     average.avg(stiffness)
     art.baginga()
     return stiffness

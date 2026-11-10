@@ -39,9 +39,19 @@ def _square_ratio(value, denominator):
     return (value ** 2) / denominator
 
 
-def _generate_preprocessing(folder_specs):
+def _generate_preprocessing(folder_specs, overwrite=False):
     strains = _read_strains()
     cwd = os.getcwd()
+
+    # Refuse to wipe existing deformation folders (they may hold finished
+    # VASP runs) unless the caller explicitly asks for it.
+    existing = [folder for folder, _ in folder_specs if os.path.exists(folder)]
+    if existing and not overwrite:
+        raise FileExistsError(
+            "Deformation folders already exist: {}. They may contain finished "
+            "VASP calculations. Remove them yourself or call this function "
+            "with overwrite=True to regenerate them.".format(", ".join(existing))
+        )
 
     for folder, deformation in folder_specs:
         _reset_folder(folder)
@@ -62,16 +72,16 @@ def _generate_preprocessing(folder_specs):
             os.remove(output_path)
 
 
-def cubic_pre():
+def cubic_pre(overwrite=False):
     _generate_preprocessing([
         ("C11_C12_I", lambda s: (s, -s, 0.0, 0.0, 0.0, 0.0)),
         ("C11_C12_II", lambda s: (s, s, s, 0.0, 0.0, 0.0)),
         ("C44", lambda s: (0.0, 0.0, 0.0, s, s, s)),
-    ])
+    ], overwrite)
     return
 
 
-def orthogonal_pre():
+def orthogonal_pre(overwrite=False):
     _generate_preprocessing([
         ("C11_C22_C12_I", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
         ("C11_C22_C12_II", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
@@ -82,22 +92,22 @@ def orthogonal_pre():
         ("C44", lambda s: (_square_ratio(s, 4 - s ** 2), 0.0, 0.0, s, 0.0, 0.0)),
         ("C55", lambda s: (0.0, _square_ratio(s, 4 - s ** 2), 0.0, 0.0, s, 0.0)),
         ("C66", lambda s: (0.0, 0.0, _square_ratio(s, 4 - s ** 2), 0.0, 0.0, s)),
-    ])
+    ], overwrite)
     return
 
 
-def hexagonal_pre():
+def hexagonal_pre(overwrite=False):
     _generate_preprocessing([
         ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
         ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
         ("C11_C33_C13_I", lambda s: (s, _square_ratio(s, 1 - s ** 2), -s, 0.0, 0.0, 0.0)),
         ("C44", lambda s: (0.0, 0.0, 0.0, s, s, 0.0)),
         ("C11_C12_C13_C33", lambda s: (s, s, s, 0.0, 0.0, 0.0)),
-    ])
+    ], overwrite)
     return
 
 
-def trigonal_1_pre():
+def trigonal_1_pre(overwrite=False):
     _generate_preprocessing([
         ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
         ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
@@ -105,11 +115,11 @@ def trigonal_1_pre():
         ("C11_C33_C13_II", lambda s: (s, _square_ratio(s, 1 - s ** 2), -s, 0.0, 0.0, 0.0)),
         ("C11_C44_C14_I", lambda s: (s, 0.0, 0.0, s, 0.0, 0.0)),
         ("C11_C44_C14_II", lambda s: (s, 0.0, 0.0, -s, 0.0, 0.0)),
-    ])
+    ], overwrite)
     return
 
 
-def trigonal_2_pre():
+def trigonal_2_pre(overwrite=False):
     _generate_preprocessing([
         ("C11_C12_I", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
         ("C11_C12_II", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
@@ -118,11 +128,11 @@ def trigonal_2_pre():
         ("C11_C44_C14_I", lambda s: (s, 0.0, 0.0, s, 0.0, 0.0)),
         ("C11_C44_C14_II", lambda s: (s, 0.0, 0.0, -s, 0.0, 0.0)),
         ("C11_C44_C15", lambda s: (s, 0.0, 0.0, 0.0, -s, 0.0)),
-    ])
+    ], overwrite)
     return
 
 
-def monoclinic_pre():
+def monoclinic_pre(overwrite=False):
     _generate_preprocessing([
         ("C11_C22_C12_I", lambda s: (s, -s, _square_ratio(s, 1 - s ** 2), 0.0, 0.0, 0.0)),
         ("C11_C22_C12_II", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
@@ -136,12 +146,12 @@ def monoclinic_pre():
         ("C22_C55_C25", lambda s: (0.0, s, 0.0, 0.0, s, 0.0)),
         ("C33_C55_C35", lambda s: (0.0, 0.0, s, 0.0, s, 0.0)),
         ("C44_C66_C46_I", lambda s: (0.0, 0.0, 0.0, s, 0.0, s)),
-        ("C44_C66_C46_II", lambda s: (0.0, 0.0, 0.0, 0.0, s, -s)),
-    ])
+        ("C44_C66_C46_II", lambda s: (0.0, 0.0, 0.0, s, 0.0, -s)),
+    ], overwrite)
     return
 
 
-def triclinic_pre():
+def triclinic_pre(overwrite=False):
     _generate_preprocessing([
         ("C11", lambda s: (s, 0.0, 0.0, 0.0, 0.0, 0.0)),
         ("C11_C22_C12", lambda s: (s, s, 0.0, 0.0, 0.0, 0.0)),
@@ -164,5 +174,5 @@ def triclinic_pre():
         ("C44_C55_C45", lambda s: (0.0, 0.0, 0.0, s, s, 0.0)),
         ("C44_C66_C46", lambda s: (0.0, 0.0, 0.0, s, 0.0, s)),
         ("C55_C66_C56", lambda s: (0.0, 0.0, 0.0, 0.0, s, s)),
-    ])
+    ], overwrite)
     return

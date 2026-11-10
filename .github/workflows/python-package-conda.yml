@@ -30,6 +30,7 @@ jobs:
         run: pytest
 
   publish-pypi:
+    needs: build-linux
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     environment: pypi
