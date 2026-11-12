@@ -3,6 +3,13 @@ Release notes
 
 The original code (0.0.4) is kept on the ``legacy`` branch; see :doc:`legacy`.
 
+0.1.1
+-----
+
+* Works with spglib 2.8: its new deprecation warning about error handling
+  (``OLD_ERROR_HANDLING``) is no longer shown, and spglib errors are handled the same way
+  on every version from 2.4 to 3.x. This also fixes the tests, which failed with spglib 2.8.
+
 0.1.0
 -----
 
