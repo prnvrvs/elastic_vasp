@@ -55,9 +55,9 @@ def _spglib_cell(atoms):
 
 
 def space_group(atoms, symprec=SYMPREC):
-    import spglib
+    from elastic_vasp import _spglib
 
-    return spglib.get_spacegroup(_spglib_cell(atoms), symprec=symprec) or "unknown"
+    return _spglib.call("get_spacegroup", _spglib_cell(atoms), symprec=symprec) or "unknown"
 
 
 def symmetry_axes(atoms, order, symprec=SYMPREC):

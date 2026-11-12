@@ -99,11 +99,11 @@ def check_symmetry(poscar_path="POSCAR", symprec=auto.SYMPREC, verbose=True):
     Prints a short summary (unless ``verbose=False``) and returns a
     :class:`SymmetryReport`. Nothing is written to disk.
     """
-    import spglib
+    from elastic_vasp import _spglib
 
     atoms = poscar.read(poscar_path)[0]
     cell = (atoms.cell.array, atoms.get_scaled_positions(), atoms.numbers)
-    dataset = spglib.get_symmetry_dataset(cell, symprec=symprec)
+    dataset = _spglib.call("get_symmetry_dataset", cell, symprec=symprec)
     if dataset is None:
         raise ValueError("spglib could not determine the symmetry of {} (symprec={})".format(
             poscar_path, symprec))

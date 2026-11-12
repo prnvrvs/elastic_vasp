@@ -70,19 +70,19 @@ def primitive_cell(atoms, symprec=SYMPREC):
     supercell onto itself, which can be a small subgroup of the crystal's point
     group. The primitive cell, without idealization (no rotation), has them all.
     """
-    import spglib
+    from elastic_vasp import _spglib
 
     cell = (atoms.cell.array, atoms.get_scaled_positions(), atoms.numbers)
-    primitive = spglib.standardize_cell(cell, to_primitive=True, no_idealize=True, symprec=symprec)
+    primitive = _spglib.call("standardize_cell", cell, to_primitive=True, no_idealize=True, symprec=symprec)
     return primitive if primitive is not None else cell
 
 
 def crystal_rotations(atoms, symprec=SYMPREC):
     """Cartesian rotation matrices of the crystal's point group (from spglib)."""
-    import spglib
+    from elastic_vasp import _spglib
 
     cell = primitive_cell(atoms, symprec)
-    data = spglib.get_symmetry(cell, symprec=symprec)
+    data = _spglib.call("get_symmetry", cell, symprec=symprec)
     if not data:
         raise ValueError("spglib could not determine the symmetry (symprec={})".format(symprec))
     lattice = np.asarray(cell[0])
@@ -108,9 +108,9 @@ def standard_setting(atoms, symprec=SYMPREC):
     along x; monoclinic unique axis b along y; and so on. A stiffness matrix
     then transforms as ``to_standard(C, R)``.
     """
-    import spglib
+    from elastic_vasp import _spglib
 
-    dataset = spglib.get_symmetry_dataset(primitive_cell(atoms, symprec), symprec=symprec)
+    dataset = _spglib.call("get_symmetry_dataset", primitive_cell(atoms, symprec), symprec=symprec)
     if dataset is None:
         raise ValueError("spglib could not determine the symmetry (symprec={})".format(symprec))
     get = (lambda key: getattr(dataset, key)) if hasattr(dataset, "number") else dataset.__getitem__
