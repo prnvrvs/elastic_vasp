@@ -29,7 +29,7 @@ from ase.io.vasp import read_vasp
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from test_elastic import (CASES, EV_PER_A3_TO_GPA, GENERIC, HEXAGONAL,  # noqa: E402
+from test_elastic import (CASES, EV_PER_A3_TO_GPA, GENERIC, HEXAGONAL, TETRAGONAL,  # noqa: E402
                           _poscar, _voigt_strain, outcar_text)
 
 from elastic_vasp import constants  # noqa: E402
@@ -51,11 +51,19 @@ def _chdir(path):
 
 def generate(system, workdir):
     workdir = Path(workdir)
-    lattice = HEXAGONAL if system in ("hexagonal", "trigonal_1", "trigonal_2") else GENERIC
+    # the lattices the reference was recorded with (kept as they were; GENERIC is
+    # monoclinic, so the symmetry check warns for cubic/orthogonal - ignored below)
+    if system in ("hexagonal", "trigonal_1", "trigonal_2"):
+        lattice = HEXAGONAL
+    elif system.startswith("tetragonal"):
+        lattice = TETRAGONAL
+    else:
+        lattice = GENERIC
     volume = abs(np.linalg.det(lattice))
     c_true = CASES[system]
     with _chdir(workdir), warnings.catch_warnings(), contextlib.redirect_stdout(io.StringIO()):
         warnings.simplefilter("error")
+        warnings.filterwarnings("ignore", message=".*cannot measure this crystal")
         (workdir / "POSCAR").write_text(_poscar(lattice))
         (workdir / "strain.dat").write_text(STRAINS)
         getattr(eg, system + "_pre")()

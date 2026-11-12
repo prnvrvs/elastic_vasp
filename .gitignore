@@ -8,3 +8,7 @@ PKG-INFO
 __pycache__/
 *.py[cod]
 .pytest_cache/
+
+# documentation build output
+docs/_build/
+docs/_generated/

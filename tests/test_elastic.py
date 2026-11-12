@@ -23,6 +23,16 @@ EV_PER_A3_TO_GPA = 160.2176621
 # b-unique monoclinic cell (2-fold along y); fine for the systems without a check
 GENERIC = np.array([[3.0, 0.0, 0.0], [0.0, 3.2, 0.0], [0.3, 0.0, 3.5]])
 HEXAGONAL = np.array([[3.0, 0.0, 0.0], [-1.5, 1.5 * np.sqrt(3), 0.0], [0.0, 0.0, 5.0]])
+CUBIC = np.eye(3) * 3.0
+ORTHORHOMBIC = np.diag([3.0, 3.2, 3.5])
+TETRAGONAL = np.diag([3.0, 3.0, 3.5])
+TRICLINIC = np.array([[3.0, 0.1, 0.2], [0.3, 3.2, 0.1], [0.2, 0.4, 3.5]])
+# one atom at the origin, so the crystal has the full symmetry of the lattice
+LATTICE_FOR = {
+    "cubic": CUBIC, "orthogonal": ORTHORHOMBIC, "tetragonal_1": TETRAGONAL,
+    "tetragonal_2": TETRAGONAL, "hexagonal": HEXAGONAL, "trigonal_1": HEXAGONAL,
+    "trigonal_2": HEXAGONAL, "monoclinic": GENERIC, "triclinic": TRICLINIC,
+}
 
 
 def _poscar(lattice):
@@ -69,7 +79,7 @@ def _voigt_strain(poscar_path, reference):
 
 
 def _run(system, c_true, tmp_path, monkeypatch):
-    lattice = HEXAGONAL if system in ("hexagonal", "trigonal_1", "trigonal_2") else GENERIC
+    lattice = LATTICE_FOR[system]
     volume = abs(np.linalg.det(lattice))
     monkeypatch.chdir(tmp_path)
     (tmp_path / "POSCAR").write_text(_poscar(lattice))
@@ -100,6 +110,11 @@ CASES = {
                        [0, 0, 0, 90, 0, 0], [0, 0, 0, 0, 90, 0], [0, 0, 0, 0, 0, _c66(300, 100)]]),
     "orthogonal": _sym([[300, 110, 90, 0, 0, 0], [0, 280, 95, 0, 0, 0], [0, 0, 260, 0, 0, 0],
                         [0, 0, 0, 70, 0, 0], [0, 0, 0, 0, 75, 0], [0, 0, 0, 0, 0, 85]]),
+    "tetragonal_1": _sym([[280, 120, 90, 0, 0, 0], [0, 280, 90, 0, 0, 0], [0, 0, 300, 0, 0, 0],
+                          [0, 0, 0, 70, 0, 0], [0, 0, 0, 0, 70, 0], [0, 0, 0, 0, 0, 85]]),
+    # tetragonal II adds C16, C26 = -C16
+    "tetragonal_2": _sym([[280, 120, 90, 0, 0, 25], [0, 280, 90, 0, 0, -25], [0, 0, 300, 0, 0, 0],
+                          [0, 0, 0, 70, 0, 0], [0, 0, 0, 0, 70, 0], [0, 0, 0, 0, 0, 85]]),
     "trigonal_1": _sym([[300, 100, 80, 20, 0, 0], [0, 300, 80, -20, 0, 0], [0, 0, 350, 0, 0, 0],
                         [0, 0, 0, 90, 0, 0], [0, 0, 0, 0, 90, 20], [0, 0, 0, 0, 0, _c66(300, 100)]]),
     # trigonal II adds C15, C25 = -C15, C46 = -C15
@@ -121,7 +136,7 @@ def test_recovers_stiffness(system, tmp_path, monkeypatch):
 
 def test_pre_refuses_to_overwrite_existing_results(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "POSCAR").write_text(_poscar(GENERIC))
+    (tmp_path / "POSCAR").write_text(_poscar(CUBIC))
     (tmp_path / "strain.dat").write_text("-0.01,0.00,0.01\n")
     eg.cubic_pre()
     outcar = tmp_path / "C44" / "strain_0.01" / "OUTCAR"
@@ -169,7 +184,7 @@ def test_unfinished_outcar_raises(tmp_path):
 
 def test_post_lists_every_problem_and_stops(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "POSCAR").write_text(_poscar(GENERIC))
+    (tmp_path / "POSCAR").write_text(_poscar(CUBIC))
     (tmp_path / "strain.dat").write_text("-0.01,0.00,0.01\n")
     eg.cubic_pre()
     volume = abs(np.linalg.det(GENERIC))

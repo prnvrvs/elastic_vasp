@@ -152,17 +152,22 @@ def _read_volume_from_poscar(poscar_path):
 
 
 def _read_volume(folder):
-  """Cell volume from a folder's OUTCAR, else its POSCAR."""
-  outcar_path = os.path.join(folder, "OUTCAR")
-  if os.path.exists(outcar_path):
-      try:
-          return _read_volume_from_outcar(outcar_path)
-      except ValueError:
-          pass
+  """Cell volume of a strain folder: from its POSCAR, else from its OUTCAR.
+
+  The POSCAR (written by pre-processing) gives the exact volume; OUTCAR prints
+  "volume of cell" with only two decimals (0.03 % for a 16 A^3 cell). With
+  ISIF = 2 the cell does not change during the run, so both describe the same cell.
+  """
   poscar_path = os.path.join(folder, "POSCAR")
   if os.path.exists(poscar_path):
-      return _read_volume_from_poscar(poscar_path)
-  raise FileNotFoundError("Neither OUTCAR nor POSCAR found in {}".format(folder))
+      try:
+          return _read_volume_from_poscar(poscar_path)
+      except ValueError:
+          pass
+  outcar_path = os.path.join(folder, "OUTCAR")
+  if os.path.exists(outcar_path):
+      return _read_volume_from_outcar(outcar_path)
+  raise FileNotFoundError("Neither POSCAR nor OUTCAR found in {}".format(folder))
 
 
 def _reference_volume(base_dir, zero_folder):

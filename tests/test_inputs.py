@@ -373,3 +373,19 @@ def test_vasp4_poscar_reads_species_from_potcar(tmp_path):
     (tmp_path / "POTCAR").write_text("  PAW_PBE Al 04Jan2001\n   TITEL  = PAW_PBE Al 04Jan2001\n End of Dataset\n")
     calc_gen(0.01, 0, 0, 0, 0, 0, poscar_path=str(src), output_path=str(tmp_path / "out"))
     assert _read_out(tmp_path / "out").get_chemical_symbols() == ["Al", "Al"]
+
+
+def test_reference_volume_comes_from_the_exact_poscar(tmp_path):
+    """OUTCAR prints 'volume of cell' with two decimals; the POSCAR gives it exactly."""
+    from ase.build import bulk
+    atoms = bulk("Al", "fcc", a=4.0391)          # V = 16.4740... A^3
+    exact = atoms.get_volume()
+    for label, energy in (("-0.01", 1e-3), ("0.00", 0.0), ("0.01", 1e-3)):
+        folder = tmp_path / ("strain_" + label)
+        folder.mkdir()
+        poscar.write(folder / "POSCAR", atoms, "Al")
+        (folder / "OUTCAR").write_text(_outcar(exact, energy).replace(
+            "%.8f" % exact, "%.2f" % exact))     # as VASP prints it: 16.47
+    assert coefficient._read_volume(str(tmp_path / "strain_0.00")) == pytest.approx(exact, rel=1e-12)
+    expected = 1e-3 / exact / 1e-4 * 160.2176621
+    assert coefficient.coeff(str(tmp_path)) == pytest.approx(expected, rel=1e-6)

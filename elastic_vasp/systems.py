@@ -7,7 +7,7 @@ Each crystal system lists
 * the deformations: folder name, linear strain direction e (Voigt, with
   engineering shear strains) and an optional second-order correction term.
 
-For a deformation of size s, the energy density is E/V = a s^2 with
+For a deformation of size delta, the energy density is E/V0 = a delta^2 with
 a = 1/2 e^T C e (to leading order). ``coeff()`` fits a for every folder, and
 because C is linear in the independent constants, ``solve()`` recovers them
 from a small linear system. Pre-processing writes exactly the strains listed
@@ -29,23 +29,28 @@ def _square_ratio(value, denominator):
 class Deformation:
     folder: str
     strain: tuple
-    # (component index, k): adds s^2 / (k - s^2) to that component, a
+    # (component index, k): sets that component to delta^2 / (k - delta^2), a
     # second-order term that keeps the volume (nearly) constant
     correction: tuple = None
 
-    def at(self, s):
-        """Voigt strain (e1..e6) applied for deformation size s."""
-        values = [0.0 if c == 0 else c * s for c in self.strain]
+    def at(self, delta):
+        """Voigt strain (e1..e6) applied for deformation size delta.
+
+        The cell is deformed by F = I + eps with eps the symmetric strain tensor:
+        eps_ii = e_i, and e4, e5, e6 (engineering shear) give eps_yz, eps_xz, eps_xy = e/2.
+        """
+        values = [0.0 if c == 0 else c * delta for c in self.strain]
         if self.correction is not None:
             index, k = self.correction
-            values[index] = _square_ratio(s, k - s ** 2)
+            values[index] = _square_ratio(delta, k - delta ** 2)
         return tuple(values)
 
     def describe(self):
-        text = "(" + ", ".join("%g" % c for c in self.strain) + ") * s"
+        """Plain-text strain, e.g. '(1, -1, 0, 0, 0, 0) * delta, e3 = delta^2/(1-delta^2)'."""
+        text = "(" + ", ".join("%g" % c for c in self.strain) + ") * delta"
         if self.correction is not None:
             index, k = self.correction
-            text += ", e{} = s^2/({:g}-s^2)".format(index + 1, k)
+            text += ", e{} = delta^2/({:g}-delta^2)".format(index + 1, k)
         return text
 
 
@@ -137,6 +142,24 @@ def _hexagonal(c):
             [0, 0, 0, 0, 0, c66]]
 
 
+def _tetragonal(c, c16=0.0):
+    # point groups 4/mmm (tetragonal I) and 4, -4, 4/m (tetragonal II: C16, C26 = -C16)
+    return [[c.C11, c.C12, c.C13, 0, 0, c16],
+            [c.C12, c.C11, c.C13, 0, 0, -c16],
+            [c.C13, c.C13, c.C33, 0, 0, 0],
+            [0, 0, 0, c.C44, 0, 0],
+            [0, 0, 0, 0, c.C44, 0],
+            [c16, -c16, 0, 0, 0, c.C66]]
+
+
+def _tetragonal_1(c):
+    return _tetragonal(c)
+
+
+def _tetragonal_2(c):
+    return _tetragonal(c, c.C16)
+
+
 def _orthorhombic(c):
     return [[c.C11, c.C12, c.C13, 0, 0, 0],
             [c.C12, c.C22, c.C23, 0, 0, 0],
@@ -201,6 +224,15 @@ _ORTHORHOMBIC_NORMAL = (
     _d("C44", (0, 0, 0, 1, 0, 0), (0, 4)),
 )
 
+_TETRAGONAL_COMMON = (
+    _d("C11_C12_I", (1, 1, 0, 0, 0, 0)),
+    _d("C11_C12_II", (1, -1, 0, 0, 0, 0), (2, 1)),
+    _d("C11_C33_C13_I", (1, 0, -1, 0, 0, 0), (1, 1)),
+    _d("C11_C12_C13_C33", (1, 1, 1, 0, 0, 0)),
+    _d("C44", (0, 0, 0, 1, 1, 0)),
+    _d("C66", (0, 0, 0, 0, 0, 1), (2, 4)),
+)
+
 _TRIGONAL_COMMON = (
     _d("C11_C12_I", (1, 1, 0, 0, 0, 0)),
     _d("C11_C12_II", (1, -1, 0, 0, 0, 0), (2, 1)),
@@ -239,6 +271,14 @@ SYSTEMS = {
         ),
         "C11 > |C12| ; 2C13^2 < C33(C11+C12) ; C44 > 0 ; C66 > 0 "
         "(equivalent to positive definiteness)",
+    ),
+    "tetragonal_1": CrystalSystem(
+        "tetragonal_1", ("C11", "C12", "C13", "C33", "C44", "C66"), _tetragonal_1,
+        _TETRAGONAL_COMMON,
+    ),
+    "tetragonal_2": CrystalSystem(
+        "tetragonal_2", ("C11", "C12", "C13", "C33", "C44", "C66", "C16"), _tetragonal_2,
+        _TETRAGONAL_COMMON + (_d("C11_C66_C16", (1, 0, 0, 0, 0, 1)),),
     ),
     "trigonal_1": CrystalSystem(
         "trigonal_1", ("C11", "C12", "C13", "C33", "C44", "C14"), _trigonal_1,

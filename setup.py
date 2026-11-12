@@ -14,7 +14,13 @@ setup(
     url='https://github.com/prnvrvs/elastic_vasp',
     author='PRANAV KUMAR',
     author_email='prnvkmr4@gmail.com',
-    license='MIT Licence',
+    license='MIT',
+    long_description=open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'README.md'), encoding='utf-8').read(),
+    long_description_content_type='text/markdown',
+    project_urls={
+        'Documentation': 'https://prnvrvs.github.io/elastic_vasp/',
+        'Source': 'https://github.com/prnvrvs/elastic_vasp',
+    },
     packages=['elastic_vasp'],
     python_requires='>=3.10',
     install_requires=['numpy',
@@ -22,12 +28,20 @@ setup(
                       # POSCAR reading/writing; older ASE ignores negative and
                       # per-axis (VASP 6) scale factors
                       'ase>=3.23',
+                      # crystal symmetry for the orientation checks
+                      'spglib>=2.4',
                       ],
+    entry_points={
+        'console_scripts': ['elastic-vasp = elastic_vasp.cli:main'],
+    },
+    extras_require={
+        'test': ['pytest', 'scipy'],
+        'doc': ['sphinx', 'sphinx-book-theme'],
+    },
 
     classifiers=[
         'Development Status :: 1 - Planning',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',  
         'Operating System :: POSIX :: Linux',        
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
