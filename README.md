@@ -23,7 +23,7 @@ Kindly **cite** following articles if you find this package useful.
 pip install elastic-vasp
 ```
 
-Requires Python 3.9 or newer. NumPy, matplotlib and [ASE](https://wiki.fysik.dtu.dk/ase/) (3.23 or newer, used to read and write POSCARs) are installed automatically.
+Requires Python 3.10 or newer. NumPy, matplotlib and [ASE](https://wiki.fysik.dtu.dk/ase/) (3.23 or newer, used to read and write POSCARs) are installed automatically.
 
 How to use this Package
 

@@ -9,9 +9,12 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     strategy:
+      # run every version even if one fails, so a failure shows its real cause
+      fail-fast: false
       max-parallel: 5
       matrix:
-        python-version: ["3.9", "3.10", "3.12"]
+        # Python 3.9 is end-of-life and has no build for ubuntu-latest (26.04)
+        python-version: ["3.10", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4

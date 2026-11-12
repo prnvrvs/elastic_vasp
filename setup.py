@@ -16,7 +16,7 @@ setup(
     author_email='prnvkmr4@gmail.com',
     license='MIT Licence',
     packages=['elastic_vasp'],
-    python_requires='>=3.9',
+    python_requires='>=3.10',
     install_requires=['numpy',
                       'matplotlib',
                       # POSCAR reading/writing; older ASE ignores negative and
@@ -31,10 +31,10 @@ setup(
         'Operating System :: POSIX :: Linux',        
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
     ],
 )
 
