@@ -26,32 +26,6 @@ LATTICE_TOL = 1e-3
 REORIENTED_NAME = "POSCAR.reoriented"
 
 
-def _read_poscar(path):
-    """Lines, lattice rows and the scale line to write with those rows.
-
-    With a single positive scale the rows are kept as written (the scale only
-    changes lengths, not directions). Negative or per-axis scales are applied,
-    because they can change directions, and the copy is written with scale 1.0.
-    """
-    lines = poscar.read(path)
-    if poscar.is_plain_scale(lines):
-        return lines, poscar.raw_lattice(lines), lines[1]
-    return lines, poscar.lattice(lines), "1.0\n"
-
-
-def _uses_cartesian_coordinates(lines):
-    """True if the POSCAR atom positions are Cartesian rather than Direct."""
-    idx = 5
-    try:
-        int(lines[idx].split()[0])
-    except (ValueError, IndexError):
-        idx += 1  # VASP5 species-name line
-    idx += 1  # skip the atom-count line
-    if lines[idx].strip()[:1] in ("s", "S"):
-        idx += 1  # Selective dynamics
-    return lines[idx].strip()[:1] in ("c", "C", "k", "K")
-
-
 def _rotation(axis, angle):
     n = np.asarray(axis, float)
     n = n / np.linalg.norm(n)
@@ -97,7 +71,8 @@ def _align(n, target):
 
 
 def _check_axis(poscar_path, system, fold, angle, target, target_name):
-    lines, lattice, scale_line = _read_poscar(poscar_path)
+    atoms, title = poscar.read(poscar_path)
+    lattice = np.array(atoms.cell.array)
     target = np.asarray(target, float)
     if _is_lattice_symmetry(lattice, _rotation(target, angle)):
         return True
@@ -117,21 +92,12 @@ def _check_axis(poscar_path, system, fold, angle, target, target_name):
         if len(axes) > 1:
             msg.append("(The lattice has {} such axes, so it may have higher symmetry than "
                        "{}.)".format(len(axes), system))
-        if _uses_cartesian_coordinates(lines):
-            msg.append("POSCAR uses Cartesian coordinates, so no reoriented copy was written; "
-                       "convert it to Direct coordinates first (required anyway).")
-        else:
-            rotated = lattice @ _align(n, target).T
-            out_path = os.path.join(os.path.dirname(poscar_path), REORIENTED_NAME)
-            with open(out_path, "w") as fh:
-                fh.write(lines[0])
-                fh.write(scale_line)
-                for row in rotated:
-                    fh.write("  {:18.12f}  {:18.12f}  {:18.12f}\n".format(*row))
-                fh.writelines(lines[5:])
-            msg.append("A rotated copy with that axis along {} was written to {} "
-                       "(fractional coordinates and atom order unchanged). To use it, copy "
-                       "it over POSCAR and rerun with overwrite=True.".format(target_name, out_path))
+        atoms.set_cell(lattice @ _align(n, target).T, scale_atoms=True)  # pure rotation
+        out_path = os.path.join(os.path.dirname(poscar_path), REORIENTED_NAME)
+        poscar.write(out_path, atoms, title)
+        msg.append("A rotated copy with that axis along {} was written to {} "
+                   "(fractional coordinates and atom order unchanged). To use it, copy "
+                   "it over POSCAR and rerun with overwrite=True.".format(target_name, out_path))
     msg.append("Continuing with the current orientation: the elastic constants will be "
                "wrong if the axis really is misaligned.")
     warnings.warn(" ".join(msg), UserWarning, stacklevel=4)

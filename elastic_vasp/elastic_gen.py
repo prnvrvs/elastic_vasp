@@ -77,9 +77,9 @@ def _check_poscar(path="POSCAR"):
     if not os.path.exists(path):
         raise FileNotFoundError("{} not found in {}; nothing was changed.".format(path, os.getcwd()))
     try:
-        cell = poscar.lattice(poscar.read(path))
-    except (ValueError, IndexError) as exc:
-        raise ValueError("{} could not be read ({}); nothing was changed.".format(path, exc)) from None
+        cell = poscar.lattice(path)
+    except ValueError as exc:
+        raise ValueError("{}; nothing was changed.".format(exc)) from None
     if abs(np.linalg.det(cell)) < 1e-8:
         raise ValueError("{} has a degenerate lattice (zero volume); nothing was changed.".format(path))
 
@@ -87,7 +87,7 @@ def _check_poscar(path="POSCAR"):
 def _generate_preprocessing(folder_specs, overwrite=False):
     _check_poscar()
     strains = _read_strains()
-    cwd = os.getcwd()
+    poscar_path = os.path.abspath("POSCAR")
 
     # Refuse to wipe existing deformation folders (they may hold finished
     # VASP runs) unless the caller explicitly asks for it.
@@ -109,13 +109,9 @@ def _generate_preprocessing(folder_specs, overwrite=False):
             strain_dir = os.path.join(folder, "strain_" + strain_label)
 
             os.mkdir(strain_dir)
-            calc_gen(*deformation(strain_value))
-
-            output_path = os.path.join(cwd, "output.txt")
-            if not os.path.exists(output_path):
-                raise IOError("calc_gen did not create output.txt")
-            shutil.copy(output_path, os.path.join(strain_dir, "POSCAR"))
-            os.remove(output_path)
+            # write straight into the strain folder (no temporary file in the cwd)
+            calc_gen(*deformation(strain_value), poscar_path=poscar_path,
+                     output_path=os.path.join(strain_dir, "POSCAR"))
 
 
 def generate(system, overwrite=False):

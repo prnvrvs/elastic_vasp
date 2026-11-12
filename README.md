@@ -23,6 +23,8 @@ Kindly **cite** following articles if you find this package useful.
 pip install elastic-vasp
 ```
 
+Requires Python 3.9 or newer. NumPy, matplotlib and [ASE](https://wiki.fysik.dtu.dk/ase/) (3.23 or newer, used to read and write POSCARs) are installed automatically.
+
 How to use this Package
 
 The repository now keeps the original code line on the `legacy` branch and the current refactored code on `main`.
@@ -70,7 +72,7 @@ triclinic_pre()
 ```
 
 Things to keep in mind:
-1. Use direct coordinate in initial POSCAR
+1. The initial POSCAR may use Direct or Cartesian coordinates and any scale-factor form (positive, negative = target volume, or VASP 6 per-axis). The strained POSCARs are always written with scale 1.0 and Direct coordinates, keeping the title line, atom order and selective-dynamics flags. The POSCAR needs a species line (VASP 5 format).
 2. Use ISIF=2 only for calculation
 3. You should know the symmetry of the crystal before preprocessing. Use the example folders for tests. To determine symmetry, use spglib or phonopy.
 4. Preprocessing refuses to run if the deformation folders already exist, so finished calculations are not deleted by accident. Pass `overwrite=True` (e.g. `cubic_pre(overwrite=True)`) to regenerate them.
