@@ -72,21 +72,28 @@ def test_misaligned_cell_warns_and_writes_rotated_copy(name, tmp_path):
     # pure rotation: same metric (lengths and angles), same volume sign
     np.testing.assert_allclose(new @ new.T, old @ old.T, atol=1e-9)
     assert np.linalg.det(new) == pytest.approx(np.linalg.det(old))
-    # everything after the lattice (species, counts, fractional coordinates) is unchanged
-    assert reoriented.read_text().splitlines()[5:] == poscar.read_text().splitlines()[5:]
+    # species, order and fractional coordinates are unchanged (only the cell rotates)
+    from ase.io.vasp import read_vasp
+    before, after = read_vasp(str(poscar)), read_vasp(str(reoriented))
+    assert after.get_chemical_symbols() == before.get_chemical_symbols()
+    np.testing.assert_allclose(after.get_scaled_positions(), before.get_scaled_positions(), atol=1e-12)
     # and the rotated copy passes the check
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         assert check(str(reoriented)) is True
 
 
-def test_cartesian_poscar_warns_without_writing_copy(tmp_path):
+def test_cartesian_poscar_also_gets_a_rotated_copy(tmp_path):
     check, lattice = BAD["monoclinic_c_unique"]
     poscar = tmp_path / "POSCAR"
     _write_poscar(poscar, lattice, mode="Cartesian")
-    with pytest.warns(UserWarning, match="Cartesian coordinates"):
+    with pytest.warns(UserWarning, match="rotated copy"):
         check(str(poscar))
-    assert not (tmp_path / orientation.REORIENTED_NAME).exists()
+    reoriented = tmp_path / orientation.REORIENTED_NAME
+    assert "Direct" in reoriented.read_text()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert check(str(reoriented)) is True
 
 
 def test_pre_warns_but_still_generates_folders(tmp_path, monkeypatch):

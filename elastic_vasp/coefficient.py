@@ -148,8 +148,7 @@ def _read_volume_from_outcar(outcar_path):
 
 
 def _read_volume_from_poscar(poscar_path):
-  lines = poscar.read(poscar_path)
-  return abs(np.linalg.det(poscar.lattice(lines)))
+  return poscar.volume(poscar_path)
 
 
 def _read_volume(folder):
