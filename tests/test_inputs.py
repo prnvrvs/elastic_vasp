@@ -350,3 +350,26 @@ def test_old_ase_is_refused(monkeypatch, tmp_path):
     monkeypatch.setattr(ase, "__version__", "3.22.1")
     with pytest.raises(ImportError, match="needs ASE >= 3.23"):
         poscar.read(tmp_path / "POSCAR")
+
+
+@pytest.mark.parametrize("species, expected", [
+    ("Fe_pv O_s", ["Fe", "O"]),
+    ("Fe/0a1b2c O", ["Fe", "O"]),
+    ("Fe O", ["Fe", "O"]),
+])
+def test_potcar_style_species_labels(tmp_path, species, expected):
+    src, out = tmp_path / "POSCAR", tmp_path / "out"
+    src.write_text("t\n1.0\n3 0 0\n0 3 0\n0 0 3\n" + species + "\n1 1\nDirect\n0 0 0\n0.5 0.5 0.5\n")
+    calc_gen(0.01, 0, 0, 0, 0, 0, poscar_path=str(src), output_path=str(out))
+    atoms = _read_out(out)
+    assert atoms.get_chemical_symbols() == expected
+    np.testing.assert_allclose(atoms.get_scaled_positions(), [[0, 0, 0], [0.5, 0.5, 0.5]], atol=1e-12)
+    assert src.read_text().splitlines()[5] == species  # the user's file is not modified
+
+
+def test_vasp4_poscar_reads_species_from_potcar(tmp_path):
+    src = tmp_path / "POSCAR"
+    src.write_text("old\n1.0\n4 0 0\n0 4 0\n0 0 4\n2\nDirect\n0 0 0\n0.5 0.5 0.5\n")
+    (tmp_path / "POTCAR").write_text("  PAW_PBE Al 04Jan2001\n   TITEL  = PAW_PBE Al 04Jan2001\n End of Dataset\n")
+    calc_gen(0.01, 0, 0, 0, 0, 0, poscar_path=str(src), output_path=str(tmp_path / "out"))
+    assert _read_out(tmp_path / "out").get_chemical_symbols() == ["Al", "Al"]

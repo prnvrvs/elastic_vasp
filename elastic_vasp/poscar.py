@@ -32,14 +32,43 @@ def read(path):
     _check_ase()
     from ase.io.vasp import read_vasp
 
+    with open(path) as fh:
+        lines = fh.readlines()
+    title = lines[0].rstrip("\n") if lines else ""
+    source = str(path)
+    species = _species_tokens(lines)
+    if species is not None:
+        elements = [_element(token) for token in species]
+        if elements != species:
+            # POTCAR-style labels (Fe_pv, O_s, Fe/<hash>) are fine for VASP, which
+            # takes species from POTCAR, but ASE needs plain element symbols.
+            lines = lines[:5] + ["  " + "  ".join(elements) + "\n"] + lines[6:]
+            source = io.StringIO("".join(lines))
     try:
-        atoms = read_vasp(str(path))
+        atoms = read_vasp(source)
     except Exception as exc:  # ASE raises many types for malformed files
         raise ValueError("{} could not be read by ASE ({}: {})".format(
             path, type(exc).__name__, exc)) from None
-    with open(path) as fh:
-        title = fh.readline().rstrip("\n")
     return atoms, title
+
+
+def _species_tokens(lines):
+    """Tokens of the VASP 5 species line, or None for VASP 4 files (no such line)."""
+    if len(lines) < 6:
+        return None
+    tokens = lines[5].split()
+    if not tokens:
+        return None
+    try:
+        int(tokens[0])
+        return None  # line 6 already holds the atom counts
+    except ValueError:
+        return tokens
+
+
+def _element(label):
+    """'Fe_pv' -> 'Fe', 'O_s' -> 'O', 'Fe/abc123' -> 'Fe'."""
+    return label.split("/", 1)[0].split("_", 1)[0]
 
 
 def write(path, atoms, title="POSCAR"):
