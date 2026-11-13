@@ -7,7 +7,8 @@ full 6×6 stiffness matrix with stability checks and Voigt–Reuss–Hill averag
 
 **Documentation: https://prnvrvs.github.io/elastic_vasp/**
 
-**Video tutorial: [Calculation of elastic constants using VASP and external python package](https://youtu.be/9z455a8NIME)**
+**Video tutorial: [Elastic constants with VASP and elastic_vasp](https://youtu.be/kXaeIoNdHzw)** (8 min, fcc Al)
+(legacy video for older versions: [YouTube](https://youtu.be/9z455a8NIME))
 
 ## Installation
 

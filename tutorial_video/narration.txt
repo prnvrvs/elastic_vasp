@@ -1,0 +1,84 @@
+Narration of the tutorial video. Edit the text after an id to change that sentence,
+then run make_video.py again (this file is never overwritten).
+To use your own voice, record each line as a file named by its id (e.g. s02_1.m4a)
+into one folder and run make_video.py with --recorded FOLDER.
+
+== 1. Introduction ==
+s01_1   In this tutorial we compute the elastic constants of a crystal with VASP with the help of a Python package named elastic_vasp.
+s01_2   The example presented here comes from VASP calculations on fcc aluminium with the help of this package.
+
+== 2. The method ==
+s02_1   The central idea is to distort the relaxed crystal by a series of small strains δ, and compute the change in energy for each one.
+s02_2   The second-order elastic constants are the second derivatives of this strain energy with respect to strain.
+s02_3   So for each distortion we fit the strain energy change per unit volume with a quadratic equation, y = aδ² + bδ + c, where a defines the curvature of the strain energy change.
+s02_4   For a cubic crystal, three independent distortions are enough: an orthorhombic, a hydrostatic and a trigonal shear distortion.
+s02_5   Each curvature is a known combination of C11, C12 and C44, so solving the three equations gives the full stiffness matrix.
+
+== 3. Install ==
+s03_1   First, install elastic_vasp directly from its GitHub repository with pip.
+s03_2   It needs Python 3.10 or newer, and pip also installs its two dependencies: ASE, to read and write structures, and spglib, to analyse the crystal symmetry.
+s03_3   To confirm the installation, run elastic-vasp --help, which lists all the available commands.
+
+== 4. Step 0 · Structure ==
+s04_1   Every calculation starts from a fully relaxed structure; here we use the one-atom primitive cell of fcc aluminium.
+s04_2   To find the equilibrium lattice constant, we computed the energy at several volumes and fitted a Birch–Murnaghan equation of state, which gives a₀ = 4.039 Å and a bulk modulus of 77.0 GPa.
+s04_3   Keep this bulk modulus in mind: at the end we will compare it with the value obtained from the elastic constants.
+
+== 5. Step 1 · Check ==
+s05_1   Before generating any structures, run elastic-vasp check in the folder that contains your POSCAR.
+s05_2   The spglib python package helps us find the space group, Fm-3m, and the number of independent constants: three for a cubic crystal.
+s05_3   Based on this symmetry, it recommends the cubic workflow and confirms that your cell is in the orientation this workflow expects.
+
+== 6. Step 2 · Generate ==
+s06_1   Next, generate the strained structures with elastic-vasp pre cubic.
+s06_2   Here we apply strains of up to three percent at seven points, so the three distortions give twenty-one VASP calculations, each in its own folder.
+s06_3   The strain ε is the small-strain tensor in Voigt notation, with engineering shear strains: ε₄ = 2ε_yz, and so on.
+s06_4   The deformation matrix is F = I + ε, so its off-diagonal entries are half the shear strains, and each POSCAR gets the lattice vectors L times F.
+s06_5   One of these distortions changes the volume of the cell, while the other two change only its shape.
+
+== 7. How F changes the cell ==
+s07_1   Here is what each deformation matrix does to the cell, exaggerated so that you can see it.
+s07_2   The orthorhombic distortion stretches the cell along x and shrinks it along y: the volume stays nearly the same, only the shape changes.
+s07_3   The hydrostatic distortion scales all three axes equally: the cell stays cubic, and only its volume changes.
+s07_4   The trigonal shear tilts the cube along its body diagonal: the right angles between the edges open up or close, and the cube becomes a rhombohedron.
+s07_5   The atoms keep their fractional coordinates, so they move with the cell.
+
+== 8. Step 3 · Run VASP ==
+s08_1   Now copy the INCAR, KPOINTS and POTCAR files into every strain folder, and run VASP in each of them.
+s08_2   The right settings depend on your material, so always do your own convergence tests.
+s08_3   Converge the cutoff energy and the k-point mesh until the elastic constants themselves, not just the total energy, stop changing.
+s08_4   Use exactly the same settings for every strain, and if the atoms relax inside the strained cell, converge the forces as well.
+
+== 9. Step 4 · Analyse ==
+s09_1   When all the calculations have finished, run elastic-vasp post cubic.
+s09_2   It reads the final energy from every OUTCAR, checks that each run completed properly, and fits a quadratic to the energy–strain data of each distortion.
+s09_3   Always look at these curves before trusting the numbers: they should be smooth, with the minimum at zero strain.
+s09_4   The hydrostatic curve is slightly asymmetric. This is anharmonicity, and because the strains are symmetric around zero, it hardly affects the fitted curvature.
+
+== 10. Step 5 · Results ==
+s10_1   The three fitted curvatures give three linear equations in C11, C12 and C44.
+s10_2   Solving them gives C11 = 106.6, C12 = 63.4, and C44 = 28.9 GPa.
+s10_3   All eigenvalues of the stiffness matrix are positive, so the crystal is mechanically stable according to the Born criteria.
+s10_4   From these constants, the bulk modulus is 77.8 GPa, close to the 77.0 GPa from the Birch–Murnaghan fit.
+s10_5   They need not agree exactly: the elastic constants are the curvature at one volume and ignore the pressure dependence of the bulk modulus, which the equation of state includes.
+
+== 11. Any orientation ==
+s11_1   What if your cell is not in the standard orientation, as often happens with structures from databases or other codes?
+s11_2   To test this, we rotated the same cell by arbitrary angles and used the automatic mode: elastic-vasp pre auto, then post auto.
+s11_3   The automatic mode detects the cubic symmetry, chooses three well-conditioned distortions for this orientation, and rotates the result back to the standard setting.
+s11_4   Both routes agree to within the numerical noise of about one to one and a half GPa.
+
+== 12. Visualise ==
+s12_1   To see how the stiffness depends on direction, install the companion package elastic-vis from GitHub.
+s12_2   Save the stiffness matrix to a file with --output, and pass that file to elastic-vis.
+s12_3   For aluminium, Young's modulus ranges from 59.4 GPa along ⟨100⟩ to 77.2 GPa along ⟨111⟩.
+
+== 13. Lessons ==
+s13_1   Finally, a few lessons we learned along the way.
+s13_2   A calculation with only the Γ point gives nonsense for a metal: here the energy even went down under strain.
+s13_3   An unconverged k-point mesh gave noise as large as the signal: that is why the convergence tests matter.
+s13_4   So do your own convergence tests, and always look at the energy–strain curves.
+
+== 14. Learn more ==
+s14_1   The full documentation, including this worked example, is available on the project website.
+s14_2   If elastic_vasp helps your work, please cite the papers listed there. Thanks for watching!
