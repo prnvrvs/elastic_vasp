@@ -3,6 +3,14 @@ Release notes
 
 The original code (0.0.4) is kept on the ``legacy`` branch; see :doc:`legacy`.
 
+0.1.2
+-----
+
+* New video tutorial (`YouTube <https://youtu.be/kXaeIoNdHzw>`_): the full workflow on
+  fcc aluminium with real VASP results; the earlier video is kept as the legacy tutorial
+  (:doc:`tutorial`).
+* ``tutorial_video/`` contains the script that builds the video and its editable narration.
+
 0.1.1
 -----
 
