@@ -22,7 +22,7 @@ From PyPI
 
    pip install elastic-vasp
 
-This installs the latest release (0.1.2), which this documentation describes.
+This installs the latest release, which this documentation describes.
 
 Latest code from GitHub
 -----------------------

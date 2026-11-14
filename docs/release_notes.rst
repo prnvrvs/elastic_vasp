@@ -3,6 +3,12 @@ Release notes
 
 The original code (0.0.4) is kept on the ``legacy`` branch; see :doc:`legacy`.
 
+0.1.3
+-----
+
+* Documentation: elastic_vasp is installed from PyPI again (``pip install elastic-vasp``);
+  installing from GitHub is only needed for changes made after the latest release.
+
 0.1.2
 -----
 
