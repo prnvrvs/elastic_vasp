@@ -15,22 +15,23 @@ Requirements
 All of these are installed automatically. VASP itself is not needed by the package: it
 only prepares the input structures and analyses the results.
 
-.. important::
-
-   This documentation describes the current code on GitHub (``main``). The release on PyPI
-   is older and lacks most of it (command line, automatic mode, symmetry checks, …), so
-   until the next release is published, install from GitHub:
-
-   .. code-block:: bash
-
-      pip install "git+https://github.com/prnvrvs/elastic_vasp.git"
-
 From PyPI
 ---------
 
 .. code-block:: bash
 
    pip install elastic-vasp
+
+This installs the latest release (0.1.2), which this documentation describes.
+
+Latest code from GitHub
+-----------------------
+
+To get changes made on ``main`` since the last release:
+
+.. code-block:: bash
+
+   pip install "git+https://github.com/prnvrvs/elastic_vasp.git"
 
 From source
 -----------

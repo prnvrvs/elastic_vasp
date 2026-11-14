@@ -13,8 +13,8 @@ full 6×6 stiffness matrix with stability checks and Voigt–Reuss–Hill averag
 ## Installation
 
 ```bash
-pip install "git+https://github.com/prnvrvs/elastic_vasp.git"   # current version (documented)
-pip install elastic-vasp                                          # last PyPI release (older)
+pip install elastic-vasp                                          # latest release (PyPI)
+pip install "git+https://github.com/prnvrvs/elastic_vasp.git"   # latest code on main
 ```
 
 Requires Python 3.10 or newer; NumPy, matplotlib, ASE and spglib are installed
